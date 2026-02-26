@@ -1,0 +1,13 @@
+# Talos secrets - encrypt with SOPS before committing
+infrastructure/talos/talosconfig
+infrastructure/talos/controlplane.yaml
+infrastructure/talos/worker.yaml
+
+# age keys
+*.agekey
+
+# OpenTofu/Terraform
+*.tfstate
+*.tfstate.backup
+.terraform/
+.tofu/

@@ -1,0 +1,21 @@
+machine:
+  network:
+    nameservers:
+      - 192.168.1.1
+      - 1.1.1.1
+      - 8.8.8.8
+  time:
+    servers:
+      - time.cloudflare.com
+  features:
+    hostDNS:
+      enabled: true
+
+cluster:
+  allowSchedulingOnControlPlanes: true
+  proxy:
+    disabled: true
+  network:
+    cni:
+      name: none
+
