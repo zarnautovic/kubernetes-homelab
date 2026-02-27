@@ -14,6 +14,10 @@ machine:
     net.ipv4.conf.all.send_redirects: "0"
     net.ipv4.conf.default.send_redirects: "0"
     net.ipv4.conf.ens18.send_redirects: "0"
+  disks:
+    - device: /dev/sdb
+      partitions:
+        - mountpoint: /var/mnt/longhorn
 
 cluster:
   allowSchedulingOnControlPlanes: true
