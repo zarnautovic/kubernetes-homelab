@@ -10,6 +10,9 @@ data:
     title: Homelab
     theme: dark
     color: slate
+    providers:
+      longhorn:
+        url: http://longhorn-frontend.longhorn-system
   bookmarks.yaml: |
     - Developer:
         - Github:
@@ -40,6 +43,11 @@ data:
           cpu: true
           memory: true
           showLabel: true
+    - longhorn:
+        expanded: true
+        total: true
+        labels: true
+        nodes: true
   docker.yaml: |
     {}
   custom.css: ""
