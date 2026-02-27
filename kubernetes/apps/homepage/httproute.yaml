@@ -7,9 +7,6 @@ spec:
   parentRefs:
     - name: main
       namespace: network
-      sectionName: http
-    - name: main
-      namespace: network
       sectionName: https-root
   hostnames:
     - "zlaya.tech"
