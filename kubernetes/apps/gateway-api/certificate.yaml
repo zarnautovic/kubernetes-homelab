@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-zlaya-tech-tls
+  namespace: network
+spec:
+  secretName: wildcard-zlaya-tech-tls
+  issuerRef:
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+  commonName: "*.zlaya.tech"
+  dnsNames:
+    - "*.zlaya.tech"
+    - "zlaya.tech"
