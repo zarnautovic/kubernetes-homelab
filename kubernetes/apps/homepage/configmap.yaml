@@ -11,7 +11,10 @@ data:
     theme: dark
     color: slate
   bookmarks.yaml: |
-    []
+    - Developer:
+        - Github:
+            - abbr: GH
+              href: https://github.com/zarnautovic 
   services.yaml: |
     []
   widgets.yaml: |
