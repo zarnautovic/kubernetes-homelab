@@ -4,3 +4,6 @@ resources:
   - namespace.yaml
   - helmrepository.yaml
   - helmrelease.yaml
+  - cloudflare-secret.yaml
+  - clusterissuer-staging.yaml
+  - clusterissuer-production.yaml
