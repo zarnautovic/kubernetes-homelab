@@ -22,6 +22,9 @@ spec:
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: "zlaya.tech"
+          envFrom:
+            - secretRef:
+                name: homepage-secrets
           volumeMounts:
             - name: config
               mountPath: /app/config

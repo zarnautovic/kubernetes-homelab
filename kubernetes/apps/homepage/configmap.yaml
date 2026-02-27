@@ -16,7 +16,15 @@ data:
             - abbr: GH
               href: https://github.com/zarnautovic 
   services.yaml: |
-    []
+    - Infrastructure:
+        - Proxmox:
+            icon: proxmox.svg
+            href: "https://192.168.1.10:8006"
+            widget:
+              type: proxmox
+              url: "https://192.168.1.10:8006"
+              username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
+              password: "{{HOMEPAGE_VAR_PROXMOX_KEY}}"
   widgets.yaml: |
     - greeting:
         text: Welcome
