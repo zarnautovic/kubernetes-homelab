@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  path: ./kubernetes/apps
+  path: ./kubernetes/apps/cert-manager
   prune: true
   wait: true
   sourceRef:
