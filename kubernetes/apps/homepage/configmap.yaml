@@ -70,7 +70,6 @@ data:
               type: prowlarr
               url: http://prowlarr.prowlarr.svc.cluster.local:9696
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
-    - Media:
         - qBittorrent:
             icon: qbittorrent.svg
             href: "https://qbittorrent.zlaya.tech"
