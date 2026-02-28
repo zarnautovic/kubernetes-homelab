@@ -17,6 +17,10 @@ data:
         columns: 2
       Security:
         icon: mdi-shield-lock
+      Media:
+        icon: mdi-play-circle
+        style: row
+        columns: 3
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system
@@ -44,6 +48,28 @@ data:
               key: "{{HOMEPAGE_VAR_TRUENAS_KEY}}"
               enablePools: true
               nasType: scale
+    - Media:
+        - Sonarr:
+            icon: sonarr.svg
+            href: "https://sonarr.zlaya.tech"
+            widget:
+              type: sonarr
+              url: http://sonarr.sonarr.svc.cluster.local:8989
+              key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
+        - Radarr:
+            icon: radarr.svg
+            href: "https://radarr.zlaya.tech"
+            widget:
+              type: radarr
+              url: http://radarr.radarr.svc.cluster.local:7878
+              key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
+        - Prowlarr:
+            icon: prowlarr.svg
+            href: "https://prowlarr.zlaya.tech"
+            widget:
+              type: prowlarr
+              url: http://prowlarr.prowlarr.svc.cluster.local:9696
+              key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
     - Security:
         - Authentik:
             icon: authentik.svg
