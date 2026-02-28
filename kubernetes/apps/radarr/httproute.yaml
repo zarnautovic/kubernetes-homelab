@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: radarr
+  namespace: radarr
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+  hostnames:
+    - "radarr.zlaya.tech"
+  rules:
+    - backendRefs:
+        - name: radarr
+          port: 7878
