@@ -39,12 +39,15 @@ spec:
               value: Netherlands
             - name: FIREWALL_OUTBOUND_SUBNETS
               value: "10.244.0.0/16,10.96.0.0/12"
+            - name: FIREWALL_INPUT_PORTS
+              value: "8080"
             - name: TZ
               value: Europe/Zagreb
           readinessProbe:
-            httpGet:
-              path: /v1/publicip/ip
-              port: 8000
+            exec:
+              command:
+                - /gluetun-entrypoint
+                - healthcheck
             initialDelaySeconds: 10
             periodSeconds: 10
             failureThreshold: 6
@@ -56,15 +59,15 @@ spec:
           image: ghcr.io/linuxserver/qbittorrent:5.0.4
           env:
             - name: PUID
-              value: "1000"
+              value: "3000"
             - name: PGID
-              value: "1000"
+              value: "3000"
             - name: TZ
               value: Europe/Zagreb
             - name: WEBUI_PORT
               value: "8080"
             - name: DOCKER_MODS
-              value: ghcr.io/vuetorrent/vuetorrent:latest
+              value: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
           ports:
             - name: http
               containerPort: 8080
