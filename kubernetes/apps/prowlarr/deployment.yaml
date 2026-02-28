@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowlarr
+  namespace: prowlarr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prowlarr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: prowlarr
+    spec:
+      containers:
+        - name: prowlarr
+          image: ghcr.io/linuxserver/prowlarr:latest
+          env:
+            - name: PUID
+              value: "3000"
+            - name: PGID
+              value: "3000"
+            - name: TZ
+              value: Europe/Zagreb
+            - name: PROWLARR__AUTH__METHOD
+              value: External
+          ports:
+            - name: http
+              containerPort: 9696
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: prowlarr-config
