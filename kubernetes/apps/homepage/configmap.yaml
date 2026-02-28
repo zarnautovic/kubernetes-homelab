@@ -28,6 +28,14 @@ data:
               url: "https://192.168.1.10:8006"
               username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
               password: "{{HOMEPAGE_VAR_PROXMOX_KEY}}"
+        - Authentik:
+            icon: authentik.svg
+            href: "https://authentik.zlaya.tech"
+            widget:
+              type: authentik
+              url: http://authentik-server.authentik.svc.cluster.local
+              key: "{{HOMEPAGE_VAR_AUTHENTIK_KEY}}"
+              version: 2
   widgets.yaml: |
     - greeting:
         text: Welcome
