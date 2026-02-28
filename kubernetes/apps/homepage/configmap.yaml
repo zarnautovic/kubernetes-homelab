@@ -70,6 +70,13 @@ data:
               type: prowlarr
               url: http://prowlarr.prowlarr.svc.cluster.local:9696
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
+        - Seerr:
+            icon: jellyseerr.svg
+            href: "https://seerr.zlaya.tech"
+            widget:
+              type: jellyseerr
+              url: http://seerr.seerr.svc.cluster.local:5055
+              key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
         - Bazarr:
             icon: bazarr.svg
             href: "https://bazarr.zlaya.tech"
