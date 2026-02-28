@@ -10,6 +10,13 @@ data:
     title: Homelab
     theme: dark
     color: slate
+    layout:
+      Servers:
+        icon: mdi-server
+        style: row
+        columns: 2
+      Security:
+        icon: mdi-shield-lock
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system
@@ -19,7 +26,7 @@ data:
             - abbr: GH
               href: https://github.com/zarnautovic 
   services.yaml: |
-    - Infrastructure:
+    - Servers:
         - Proxmox:
             icon: proxmox.svg
             href: "https://192.168.1.10:8006"
@@ -28,6 +35,16 @@ data:
               url: "https://192.168.1.10:8006"
               username: "{{HOMEPAGE_VAR_PROXMOX_USER}}"
               password: "{{HOMEPAGE_VAR_PROXMOX_KEY}}"
+        - TrueNAS:
+            icon: truenas-scale.png
+            href: "https://192.168.1.101"
+            widget:
+              type: truenas
+              url: "https://192.168.1.101"
+              key: "{{HOMEPAGE_VAR_TRUENAS_KEY}}"
+              enablePools: true
+              nasType: scale
+    - Security:
         - Authentik:
             icon: authentik.svg
             href: "https://authentik.zlaya.tech"
