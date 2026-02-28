@@ -25,6 +25,8 @@ spec:
       defaultDataPath: /var/mnt/longhorn
       defaultReplicaCount: 3
       storageMinimalAvailablePercentage: 10
+      nodeDrainPolicy: always-allow
     persistence:
       defaultClass: true
       defaultClassReplicaCount: 3
+      migratable: true
