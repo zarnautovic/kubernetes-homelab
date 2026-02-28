@@ -15,6 +15,8 @@ spec:
       labels:
         app.kubernetes.io/name: seerr
     spec:
+      securityContext:
+        fsGroup: 1000
       containers:
         - name: seerr
           image: ghcr.io/seerr-team/seerr:latest
