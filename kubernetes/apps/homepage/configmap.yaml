@@ -70,6 +70,13 @@ data:
               type: prowlarr
               url: http://prowlarr.prowlarr.svc.cluster.local:9696
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
+        - Bazarr:
+            icon: bazarr.svg
+            href: "https://bazarr.zlaya.tech"
+            widget:
+              type: bazarr
+              url: http://bazarr.bazarr.svc.cluster.local:6767
+              key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
         - qBittorrent:
             icon: qbittorrent.svg
             href: "https://qbittorrent.zlaya.tech"
