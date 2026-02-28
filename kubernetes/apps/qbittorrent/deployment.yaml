@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qbittorrent
+  namespace: qbittorrent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: qbittorrent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: qbittorrent
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      initContainers:
+        - name: gluetun
+          image: ghcr.io/qdm12/gluetun:v3.39.0
+          restartPolicy: Always
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+          env:
+            - name: VPN_SERVICE_PROVIDER
+              value: nordvpn
+            - name: VPN_TYPE
+              value: wireguard
+            - name: WIREGUARD_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: qbittorrent-secrets
+                  key: WIREGUARD_PRIVATE_KEY
+            - name: SERVER_COUNTRIES
+              value: Netherlands
+            - name: FIREWALL_OUTBOUND_SUBNETS
+              value: "10.244.0.0/16,10.96.0.0/12"
+            - name: TZ
+              value: Europe/Zagreb
+          readinessProbe:
+            httpGet:
+              path: /v1/publicip/ip
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
+          volumeMounts:
+            - name: tun-device
+              mountPath: /dev/net/tun
+      containers:
+        - name: qbittorrent
+          image: ghcr.io/linuxserver/qbittorrent:5.0.4
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: Europe/Zagreb
+            - name: WEBUI_PORT
+              value: "8080"
+            - name: DOCKER_MODS
+              value: ghcr.io/vuetorrent/vuetorrent:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: downloads
+              mountPath: /downloads
+      volumes:
+        - name: tun-device
+          hostPath:
+            path: /dev/net/tun
+            type: CharDevice
+        - name: config
+          persistentVolumeClaim:
+            claimName: qbittorrent-config
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: qbittorrent-downloads
