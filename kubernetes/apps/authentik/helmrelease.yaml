@@ -35,7 +35,6 @@ spec:
       targetPath: postgresql.auth.password
   values:
     authentik:
-      host: "https://authentik.zlaya.tech"
       postgresql:
         host: "authentik-postgresql"
         name: authentik
