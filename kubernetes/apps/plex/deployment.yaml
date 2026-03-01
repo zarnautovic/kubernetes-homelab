@@ -98,25 +98,25 @@ spec:
             - name: config
               mountPath: /config
             - name: media
-              mountPath: /movies
+              mountPath: /data/movies
               subPath: movies
             - name: media
-              mountPath: /tvshows
+              mountPath: /data/tvshows
               subPath: tvshows
             - name: media
-              mountPath: /cartons
+              mountPath: /data/cartons
               subPath: cartons
             - name: media
-              mountPath: /cartons-tvshows
+              mountPath: /data/cartons-tvshows
               subPath: cartons-tvshows
             - name: media
-              mountPath: /anime
+              mountPath: /data/anime
               subPath: anime
             - name: media
-              mountPath: /marijana
+              mountPath: /data/marijana
               subPath: marijana
             - name: media
-              mountPath: /downloads
+              mountPath: /data/downloads
               subPath: torrent/complete
             - name: transcode
               mountPath: /transcode
