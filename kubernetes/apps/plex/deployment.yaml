@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plex
+  namespace: plex
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: plex
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: plex
+    spec:
+      initContainers:
+        - name: restore-config
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              if [ ! -d /config/Library ]; then
+                echo "Restoring Plex config from backup..."
+                cp -r /backup/Library /config/
+                chown -R 3000:3000 /config/Library
+                echo "Restore complete"
+              else
+                echo "Config already exists, skipping restore."
+              fi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /backup
+              subPath: plex-backup
+      containers:
+        - name: plex
+          image: plexinc/pms-docker:latest
+          ports:
+            - containerPort: 32400
+              name: web
+              protocol: TCP
+            - containerPort: 32469
+              name: dlna-ssl
+              protocol: TCP
+            - containerPort: 1900
+              name: dlna-udp
+              protocol: UDP
+            - containerPort: 3005
+              name: plex-companion
+              protocol: TCP
+            - containerPort: 8324
+              name: plex-roku
+              protocol: TCP
+            - containerPort: 32410
+              name: gmd-32410
+              protocol: UDP
+            - containerPort: 32412
+              name: gmd-32412
+              protocol: UDP
+            - containerPort: 32413
+              name: gmd-32413
+              protocol: UDP
+            - containerPort: 32414
+              name: gmd-32414
+              protocol: UDP
+          env:
+            - name: PLEX_CLAIM
+              valueFrom:
+                secretKeyRef:
+                  name: plex-secrets
+                  key: PLEX_CLAIM
+            - name: ADVERTISE_IP
+              valueFrom:
+                secretKeyRef:
+                  name: plex-secrets
+                  key: ADVERTISE_IP
+            - name: ALLOWED_NETWORKS
+              valueFrom:
+                secretKeyRef:
+                  name: plex-secrets
+                  key: ALLOWED_NETWORKS
+            - name: PLEX_UID
+              value: "3000"
+            - name: PLEX_GID
+              value: "3000"
+            - name: TZ
+              value: Europe/Zagreb
+          resources:
+            limits:
+              gpu.intel.com/i915: "1"
+            requests:
+              gpu.intel.com/i915: "1"
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: media
+              mountPath: /movies
+              subPath: movies
+            - name: media
+              mountPath: /tvshows
+              subPath: tvshows
+            - name: media
+              mountPath: /cartons
+              subPath: cartons
+            - name: media
+              mountPath: /cartons-tvshows
+              subPath: cartons-tvshows
+            - name: media
+              mountPath: /anime
+              subPath: anime
+            - name: media
+              mountPath: /marijana
+              subPath: marijana
+            - name: media
+              mountPath: /downloads
+              subPath: torrent/complete
+            - name: transcode
+              mountPath: /transcode
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: plex-config
+        - name: media
+          persistentVolumeClaim:
+            claimName: plex-media
+        - name: transcode
+          emptyDir:
+            medium: Memory
+            sizeLimit: 8Gi

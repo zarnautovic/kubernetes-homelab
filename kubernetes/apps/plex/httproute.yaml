@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: plex
+  namespace: plex
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+  hostnames:
+    - "plex.zlaya.tech"
+  rules:
+    - backendRefs:
+        - name: plex
+          port: 32400
