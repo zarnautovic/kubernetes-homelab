@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tautulli
+  namespace: tautulli
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+  hostnames:
+    - "tautulli.zlaya.tech"
+  rules:
+    - backendRefs:
+        - name: tautulli
+          port: 8181
