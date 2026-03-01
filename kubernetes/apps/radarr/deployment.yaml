@@ -34,11 +34,7 @@ spec:
             - name: config
               mountPath: /config
             - name: media
-              mountPath: /downloads/complete
-              subPath: torrent/complete
-            - name: media
-              mountPath: /movies
-              subPath: movies
+              mountPath: /data
       volumes:
         - name: config
           persistentVolumeClaim:
