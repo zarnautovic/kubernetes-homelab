@@ -20,7 +20,7 @@ data:
       Media:
         icon: mdi-play-circle
         style: row
-        columns: 3
+        columns: 4
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system
@@ -49,6 +49,35 @@ data:
               enablePools: true
               nasType: scale
     - Media:
+        - Plex:
+            icon: plex.svg
+            href: "https://plex.zlaya.tech"
+            widget:
+              type: plex
+              url: http://plex.plex.svc.cluster.local:32400
+              key: "{{HOMEPAGE_VAR_PLEX_TOKEN}}"
+        - Seerr:
+            icon: jellyseerr.svg
+            href: "https://seerr.zlaya.tech"
+            widget:
+              type: jellyseerr
+              url: http://seerr.seerr.svc.cluster.local:5055
+              key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
+        - Tautulli:
+            icon: tautulli.svg
+            href: "https://tautulli.zlaya.tech"
+            widget:
+              type: tautulli
+              url: http://tautulli.tautulli.svc.cluster.local:8181
+              key: "{{HOMEPAGE_VAR_TAUTULLI_KEY}}"
+        - qBittorrent:
+            icon: qbittorrent.svg
+            href: "https://qbittorrent.zlaya.tech"
+            widget:
+              type: qbittorrent
+              url: http://qbittorrent.qbittorrent.svc.cluster.local:8080
+              username: "{{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}"
+              password: "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}"
         - Sonarr:
             icon: sonarr.svg
             href: "https://sonarr.zlaya.tech"
@@ -70,13 +99,6 @@ data:
               type: prowlarr
               url: http://prowlarr.prowlarr.svc.cluster.local:9696
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
-        - Seerr:
-            icon: jellyseerr.svg
-            href: "https://seerr.zlaya.tech"
-            widget:
-              type: jellyseerr
-              url: http://seerr.seerr.svc.cluster.local:5055
-              key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
         - Bazarr:
             icon: bazarr.svg
             href: "https://bazarr.zlaya.tech"
@@ -84,14 +106,6 @@ data:
               type: bazarr
               url: http://bazarr.bazarr.svc.cluster.local:6767
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
-        - qBittorrent:
-            icon: qbittorrent.svg
-            href: "https://qbittorrent.zlaya.tech"
-            widget:
-              type: qbittorrent
-              url: http://qbittorrent.qbittorrent.svc.cluster.local:8080
-              username: "{{HOMEPAGE_VAR_QBITTORRENT_USERNAME}}"
-              password: "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}"
     - Security:
         - Authentik:
             icon: authentik.svg
