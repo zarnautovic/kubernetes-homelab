@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: couchdb
+  namespace: obsidian-livesync
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: couchdb
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: couchdb
+    spec:
+      securityContext:
+        fsGroup: 5984
+      containers:
+        - name: couchdb
+          image: couchdb:3
+          env:
+            - name: TZ
+              value: Europe/Zagreb
+            - name: COUCHDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-credentials
+                  key: COUCHDB_USER
+            - name: COUCHDB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: couchdb-credentials
+                  key: COUCHDB_PASSWORD
+          ports:
+            - name: http
+              containerPort: 5984
+          volumeMounts:
+            - name: data
+              mountPath: /opt/couchdb/data
+            - name: config
+              mountPath: /opt/couchdb/etc/local.ini
+              subPath: local.ini
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: couchdb-data
+        - name: config
+          configMap:
+            name: couchdb-config
