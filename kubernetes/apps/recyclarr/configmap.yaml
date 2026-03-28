@@ -12,7 +12,7 @@ data:
     # Playback: Philips OLED + Denon AVR + 5.0 surround
     ###########################################################################
     radarr:
-      main:
+      radarr:
         base_url: http://radarr.radarr.svc.cluster.local:7878
         api_key: !env_var RADARR_API_KEY
         delete_old_custom_formats: true
@@ -43,7 +43,7 @@ data:
     # Two profiles in one instance, no audio format scoring
     ###########################################################################
     sonarr:
-      main:
+      sonarr:
         base_url: http://sonarr.sonarr.svc.cluster.local:8989
         api_key: !env_var SONARR_API_KEY
         delete_old_custom_formats: true
