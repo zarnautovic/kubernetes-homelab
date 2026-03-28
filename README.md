@@ -15,11 +15,13 @@ GitOps repository for my homelab Kubernetes cluster.
 
 ## Nodes
 
+All nodes are **HP EliteDesk G4 Mini** PCs.
+
 | Node | Host | IP | RAM |
 |---|---|---|---|
-| talos-icw-nam | zeus | 192.168.1.143 | 64GB |
+| talos-icw-nam | zeus | 192.168.1.143 | 32GB |
 | talos-pv0-ntu | poseidon | 192.168.1.135 | 32GB |
-| talos-zij-wro | hades | 192.168.1.136 | 48GB |
+| talos-zij-wro | hades | 192.168.1.136 | 32GB |
 
 - **API VIP**: 192.168.1.100
 - **LB IP pool**: 192.168.1.240/28 (Cilium L2 announcements)
