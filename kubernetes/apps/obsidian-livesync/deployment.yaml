@@ -17,6 +17,18 @@ spec:
     spec:
       securityContext:
         fsGroup: 5984
+      initContainers:
+        - name: copy-config
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - cp /config-readonly/local.ini /opt/couchdb/etc/local.d/livesync.ini
+          volumeMounts:
+            - name: config-readonly
+              mountPath: /config-readonly
+            - name: config-writable
+              mountPath: /opt/couchdb/etc/local.d
       containers:
         - name: couchdb
           image: couchdb:3
@@ -39,13 +51,14 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/couchdb/data
-            - name: config
-              mountPath: /opt/couchdb/etc/local.d/livesync.ini
-              subPath: local.ini
+            - name: config-writable
+              mountPath: /opt/couchdb/etc/local.d
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: couchdb-data
-        - name: config
+        - name: config-readonly
           configMap:
             name: couchdb-config
+        - name: config-writable
+          emptyDir: {}
