@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autobrr
+  namespace: autobrr
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: autobrr
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: autobrr
+    spec:
+      containers:
+        - name: autobrr
+          image: ghcr.io/autobrr/autobrr:latest
+          env:
+            - name: TZ
+              value: Europe/Zagreb
+          ports:
+            - name: http
+              containerPort: 7474
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: autobrr-config
