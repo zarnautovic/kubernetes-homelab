@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: recyclarr-config
+  namespace: recyclarr
+data:
+  recyclarr.yml: |
+    # yaml-language-server: $schema=https://schemas.recyclarr.dev/latest/config-schema.json
+
+    ###########################################################################
+    # Radarr — UHD Bluray + WEB (4K)
+    # Playback: Philips OLED + Denon AVR + 5.0 surround
+    ###########################################################################
+    radarr:
+      main:
+        base_url: http://radarr.radarr.svc.cluster.local:7878
+        api_key: !env_var RADARR_API_KEY
+        delete_old_custom_formats: true
+
+        quality_definition:
+          type: movie
+
+        quality_profiles:
+          - trash_id: 64fb5f9858489bdac2af690e27c8f42f # UHD Bluray + WEB
+            reset_unmatched_scores:
+              enabled: true
+
+        custom_format_groups:
+          add:
+            - trash_id: ff204bbcecdd487d1cefcefdbf0c278d # [Required] Golden Rule UHD
+              select:
+                - 839bea857ed2c0a8e084f3cbdbd65ecb # x265 (no HDR/DV)
+
+        custom_formats:
+          - trash_ids:
+              - 923b6abef9b17f937fab56cfcf89e1f1 # DV (w/o HDR fallback)
+              - 9c38ebb7384dada637be8899efa68e6f # SDR
+            assign_scores_to:
+              - trash_id: 64fb5f9858489bdac2af690e27c8f42f
+
+    ###########################################################################
+    # Sonarr — WEB-1080p + WEB-2160p
+    # Two profiles in one instance, no audio format scoring
+    ###########################################################################
+    sonarr:
+      main:
+        base_url: http://sonarr.sonarr.svc.cluster.local:8989
+        api_key: !env_var SONARR_API_KEY
+        delete_old_custom_formats: true
+
+        quality_definition:
+          type: series
+
+        quality_profiles:
+          - trash_id: 72dae194fc92bf828f32cde7744e51a1 # WEB-1080p
+            reset_unmatched_scores:
+              enabled: true
+          - trash_id: d1498e7d189fbe6c7110ceaabb7473e6 # WEB-2160p
+            reset_unmatched_scores:
+              enabled: true
+
+        custom_format_groups:
+          add:
+            - trash_id: e3f37512790f00d0e89e54fe5e790d1c # [Required] Golden Rule UHD
+              select:
+                - 9b64dff695c2115facf1b6ea59c9bd07 # x265 (no HDR/DV)
+
+        custom_formats:
+          - trash_ids:
+              - 9b27ab6498ec0f31a3353992e19434ca # DV (w/o HDR fallback)
+              - 83304f261cf516bb208c18c54c0adf97 # SDR (no WEBDL)
+            assign_scores_to:
+              - trash_id: d1498e7d189fbe6c7110ceaabb7473e6

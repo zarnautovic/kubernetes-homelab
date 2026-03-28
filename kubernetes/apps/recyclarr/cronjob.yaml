@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: recyclarr
+  namespace: recyclarr
+spec:
+  schedule: "0 4 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: recyclarr
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsUser: 3000
+            runAsGroup: 3000
+            fsGroup: 3000
+          initContainers:
+            - name: copy-config
+              image: busybox:1.37
+              command: ["cp", "/config-input/recyclarr.yml", "/config/recyclarr.yml"]
+              volumeMounts:
+                - name: config-input
+                  mountPath: /config-input
+                  readOnly: true
+                - name: config
+                  mountPath: /config
+          containers:
+            - name: recyclarr
+              image: ghcr.io/recyclarr/recyclarr:8
+              command: ["recyclarr", "sync"]
+              env:
+                - name: TZ
+                  value: Europe/Zagreb
+                - name: SONARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: recyclarr-secrets
+                      key: SONARR_API_KEY
+                - name: RADARR_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: recyclarr-secrets
+                      key: RADARR_API_KEY
+              volumeMounts:
+                - name: config
+                  mountPath: /config
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  memory: 256Mi
+          volumes:
+            - name: config-input
+              configMap:
+                name: recyclarr-config
+            - name: config
+              emptyDir: {}
