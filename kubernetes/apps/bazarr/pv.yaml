@@ -11,7 +11,7 @@ spec:
   storageClassName: ""
   nfs:
     server: 192.168.1.101
-    path: /mnt/media-pool/media-share
+    path: /mnt/main-pool/media
   claimRef:
     name: bazarr-media
     namespace: bazarr
