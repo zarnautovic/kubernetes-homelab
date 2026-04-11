@@ -26,7 +26,7 @@ spec:
       defaultReplicaCount: 3
       storageMinimalAvailablePercentage: 10
       nodeDrainPolicy: always-allow
-      backupTarget: nfs://192.168.1.101:/mnt/backup-pool/backup
+      backupTarget: nfs://192.168.1.101:/mnt/backup-pool/backup?nfsOptions=nfsvers=3,nolock
     persistence:
       defaultClass: true
       defaultClassReplicaCount: 3
