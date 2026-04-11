@@ -1,0 +1,38 @@
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-critical
+  namespace: longhorn-system
+spec:
+  cron: "0 2 * * *"
+  task: backup
+  retain: 7
+  concurrency: 2
+  labels:
+    backup: critical
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-high
+  namespace: longhorn-system
+spec:
+  cron: "0 3 * * *"
+  task: backup
+  retain: 5
+  concurrency: 2
+  labels:
+    backup: high
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-medium
+  namespace: longhorn-system
+spec:
+  cron: "0 4 * * 0"
+  task: backup
+  retain: 3
+  concurrency: 2
+  labels:
+    backup: medium
