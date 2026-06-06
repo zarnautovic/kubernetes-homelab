@@ -27,6 +27,9 @@ spec:
       storageMinimalAvailablePercentage: 10
       nodeDrainPolicy: always-allow
       backupTarget: nfs://192.168.1.101:/mnt/backup-pool/backup?nfsOptions=nfsvers=3,nolock
+      # Live-upgrade volume engines to the default (chart) engine image, 1 per node at a
+      # time, so engines never drift behind the Longhorn version on future upgrades.
+      concurrentAutomaticEngineUpgradePerNodeLimit: 1
     persistence:
       defaultClass: true
       defaultClassReplicaCount: 3
