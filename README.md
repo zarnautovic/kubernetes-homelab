@@ -15,13 +15,13 @@ GitOps repository for my homelab Kubernetes cluster.
 
 ## Nodes
 
-All nodes are **HP EliteDesk G4 Mini** PCs.
+Each Talos node is a Proxmox VM (16GB RAM allocated), one per physical **HP EliteDesk G4 Mini** host (32GB RAM each).
 
-| Node | Host | IP | RAM |
+| Node | Host | IP | VM RAM |
 |---|---|---|---|
-| talos-icw-nam | zeus | 192.168.1.143 | 32GB |
-| talos-pv0-ntu | poseidon | 192.168.1.135 | 32GB |
-| talos-zij-wro | hades | 192.168.1.136 | 32GB |
+| talos-icw-nam | zeus | 192.168.1.143 | 16GB |
+| talos-pv0-ntu | poseidon | 192.168.1.135 | 16GB |
+| talos-node-hades | hades | 192.168.1.136 | 16GB |
 
 - **API VIP**: 192.168.1.100
 - **LB IP pool**: 192.168.1.240/28 (Cilium L2 announcements)
@@ -52,13 +52,16 @@ kubernetes/
     ├── homepage/       # Dashboard
     ├── qbittorrent/    # Torrent client (VPN)
     ├── prowlarr/       # Indexer manager + FlareSolverr
+    ├── autobrr/        # IRC/RSS release automation
     ├── sonarr/         # TV show management
     ├── radarr/         # Movie management
     ├── bazarr/         # Subtitle management
+    ├── recyclarr/      # TRaSH Guides quality-profile sync (CronJob)
     ├── seerr/          # Media request management
     ├── plex/           # Media server
     ├── tautulli/       # Plex analytics
-    └── intel-gpu-plugin/ # iGPU device plugin
+    ├── intel-gpu-plugin/ # iGPU device plugin
+    └── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync
 ```
 
 ## Applications
@@ -71,6 +74,7 @@ kubernetes/
 | Longhorn | longhorn-system | longhorn.zlaya.tech | Distributed block storage, nodeDrainPolicy: always-allow |
 | Authentik | authentik | authentik.zlaya.tech | SSO / identity provider, embedded outpost |
 | Homepage | homepage | zlaya.tech | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
+| Obsidian LiveSync | obsidian-livesync | obsidian-sync.zlaya.tech | CouchDB sync backend for Obsidian |
 
 ### Media Stack
 
@@ -78,9 +82,11 @@ kubernetes/
 |---|---|---|---|
 | qBittorrent | qbittorrent | qbittorrent.zlaya.tech | Gluetun sidecar (NordVPN WireGuard), VueTorrent UI |
 | Prowlarr | prowlarr | prowlarr.zlaya.tech | Indexer manager, FlareSolverr sidecar |
+| autobrr | autobrr | autobrr.zlaya.tech | IRC/RSS release automation, feeds the download client |
 | Sonarr | sonarr | sonarr.zlaya.tech | TV show automation, External auth |
 | Radarr | radarr | radarr.zlaya.tech | Movie automation, External auth |
 | Bazarr | bazarr | bazarr.zlaya.tech | Subtitle automation |
+| Recyclarr | recyclarr | — | CronJob syncing TRaSH Guides quality profiles to Sonarr/Radarr |
 | Seerr | seerr | seerr.zlaya.tech | Media request UI, connects to Plex + Sonarr + Radarr |
 | Plex | plex | plex.zlaya.tech | Media server, LB IP 192.168.1.241:32400, Intel UHD 630 HW transcode |
 | Tautulli | tautulli | tautulli.zlaya.tech | Plex analytics and monitoring |
