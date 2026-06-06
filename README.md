@@ -65,6 +65,8 @@ kubernetes/
     └── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync
 ```
 
+> URLs below use `example.com` as a placeholder for the real domain.
+
 ## Applications
 
 ### Infrastructure
@@ -73,25 +75,25 @@ kubernetes/
 |---|---|---|---|
 | Cilium | kube-system | — | CNI, kube-proxy replacement, Gateway API, L2; Flux-managed HelmRelease |
 | cert-manager | cert-manager | — | DNS-01 via Cloudflare, letsencrypt staging + production |
-| Longhorn | longhorn-system | longhorn.zlaya.tech | Distributed block storage (×3 replicas), daily NFS backups, auto engine-upgrade |
-| Authentik | authentik | authentik.zlaya.tech | SSO / identity provider, embedded outpost |
-| Homepage | homepage | zlaya.tech | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
-| Obsidian LiveSync | obsidian-livesync | obsidian-sync.zlaya.tech | CouchDB sync backend for Obsidian |
+| Longhorn | longhorn-system | longhorn.example.com | Distributed block storage (×3 replicas), daily NFS backups, auto engine-upgrade |
+| Authentik | authentik | authentik.example.com | SSO / identity provider, embedded outpost |
+| Homepage | homepage | example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
+| Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
 
 ### Media Stack
 
 | App | Namespace | URL | Notes |
 |---|---|---|---|
-| qBittorrent | qbittorrent | qbittorrent.zlaya.tech | Gluetun sidecar (NordVPN WireGuard), VueTorrent UI |
-| Prowlarr | prowlarr | prowlarr.zlaya.tech | Indexer manager, FlareSolverr sidecar |
-| autobrr | autobrr | autobrr.zlaya.tech | IRC/RSS release automation, feeds the download client |
-| Sonarr | sonarr | sonarr.zlaya.tech | TV show automation, External auth |
-| Radarr | radarr | radarr.zlaya.tech | Movie automation, External auth |
-| Bazarr | bazarr | bazarr.zlaya.tech | Subtitle automation |
+| qBittorrent | qbittorrent | qbittorrent.example.com | Gluetun sidecar (NordVPN WireGuard), VueTorrent UI |
+| Prowlarr | prowlarr | prowlarr.example.com | Indexer manager, FlareSolverr sidecar |
+| autobrr | autobrr | autobrr.example.com | IRC/RSS release automation, feeds the download client |
+| Sonarr | sonarr | sonarr.example.com | TV show automation, External auth |
+| Radarr | radarr | radarr.example.com | Movie automation, External auth |
+| Bazarr | bazarr | bazarr.example.com | Subtitle automation |
 | Recyclarr | recyclarr | — | CronJob syncing TRaSH Guides quality profiles to Sonarr/Radarr |
-| Seerr | seerr | seerr.zlaya.tech | Media request UI, connects to Plex + Sonarr + Radarr |
-| Plex | plex | plex.zlaya.tech | Media server, LB IP 192.168.1.241:32400, Intel UHD 630 HW transcode |
-| Tautulli | tautulli | tautulli.zlaya.tech | Plex analytics and monitoring |
+| Seerr | seerr | seerr.example.com | Media request UI, connects to Plex + Sonarr + Radarr |
+| Plex | plex | plex.example.com | Media server, LB IP 192.168.1.241:32400, Intel UHD 630 HW transcode |
+| Tautulli | tautulli | tautulli.example.com | Plex analytics and monitoring |
 
 ## Storage
 
