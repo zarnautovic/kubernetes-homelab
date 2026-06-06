@@ -6,16 +6,16 @@ GitOps repository for my homelab Kubernetes cluster.
 
 | Component | Technology |
 |---|---|
-| OS | Talos Linux v1.12.4 |
-| Kubernetes | v1.35.0 |
-| CNI | Cilium v1.18.7 |
-| GitOps | Flux CD v2.8.0 |
+| OS | Talos Linux v1.13.3 |
+| Kubernetes | v1.35.5 |
+| CNI | Cilium v1.19.4 (kube-proxy replacement, native routing, Gateway API, L2 announcements) |
+| GitOps | Flux CD v2.8 |
 | Secrets | SOPS + age |
-| Storage | Longhorn + TrueNAS NFS |
+| Storage | Longhorn v1.12.0 + TrueNAS NFS |
 
 ## Nodes
 
-Each Talos node is a Proxmox VM (16GB RAM allocated), one per physical **HP EliteDesk G4 Mini** host (32GB RAM each).
+Each Talos node is a Proxmox VM (16GB RAM allocated), one per physical **HP EliteDesk G4 Mini** host (32GB RAM each). All three are control-plane nodes with scheduling enabled (hyperconverged).
 
 | Node | Host | IP | VM RAM |
 |---|---|---|---|
@@ -37,6 +37,7 @@ Internet → Router (443) → Ubuntu VM (Traefik) → Kubernetes LB (192.168.1.2
 - Gateway API v1.2.1 with Cilium GatewayClass
 - Gateway `main` in `network` namespace — listeners on HTTP :80 and HTTPS :443
 - HTTP → HTTPS redirect at gateway level
+- Cilium is bootstrapped via Helm at install (CNI chicken-and-egg) and managed day-2 by a Flux HelmRelease (`kube-system/cilium`)
 
 ## Repository Structure
 
@@ -46,8 +47,8 @@ kubernetes/
 └── apps/
     ├── cert-manager/   # TLS certificate management
     ├── gateway-api/    # Gateway + HTTPRoutes
-    ├── kube-system/    # Cilium, metrics-server, reloader
-    ├── longhorn-system/# Distributed block storage
+    ├── kube-system/    # Cilium (HelmRelease), metrics-server, reloader
+    ├── longhorn-system/# Distributed block storage + NFS backups
     ├── authentik/      # SSO / identity provider
     ├── homepage/       # Dashboard
     ├── qbittorrent/    # Torrent client (VPN)
@@ -70,8 +71,9 @@ kubernetes/
 
 | App | Namespace | URL | Notes |
 |---|---|---|---|
+| Cilium | kube-system | — | CNI, kube-proxy replacement, Gateway API, L2; Flux-managed HelmRelease |
 | cert-manager | cert-manager | — | DNS-01 via Cloudflare, letsencrypt staging + production |
-| Longhorn | longhorn-system | longhorn.zlaya.tech | Distributed block storage, nodeDrainPolicy: always-allow |
+| Longhorn | longhorn-system | longhorn.zlaya.tech | Distributed block storage (×3 replicas), daily NFS backups, auto engine-upgrade |
 | Authentik | authentik | authentik.zlaya.tech | SSO / identity provider, embedded outpost |
 | Homepage | homepage | zlaya.tech | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.zlaya.tech | CouchDB sync backend for Obsidian |
@@ -93,9 +95,15 @@ kubernetes/
 
 ## Storage
 
-- **Longhorn**: replicated block storage for app config PVCs
-- **TrueNAS NFS**: 3TB share for all media and downloads
-  - NFS PVs use `storageClassName: ""`, RWX, Retain policy, pre-bound via `claimRef`
+Three distinct tiers:
+
+- **Longhorn v1.12.0** — replicated (×3) block storage for app config/database PVCs. Data lives on each node's dedicated disk at `/var/mnt/longhorn` (`/dev/sdb`). Volume engines auto-upgrade to the chart's default image (`concurrentAutomaticEngineUpgradePerNodeLimit: 1`), so they never drift behind the Longhorn version.
+- **Longhorn backups** — daily snapshots pushed **off-cluster** to TrueNAS NFS.
+  - Target: `nfs://192.168.1.101:/mnt/backup-pool/backup` (NFSv3, nolock)
+  - Recurring job `backup-critical` (group `default`): all volumes, daily 02:00, retain 7
+- **TrueNAS NFS (media)** — bulk media + downloads, mounted by the media stack.
+  - `nfs://192.168.1.101:/mnt/main-pool/media`
+  - PVs use `storageClassName: ""`, RWX, Retain policy, pre-bound via `claimRef`
 
 ## Secrets
 
