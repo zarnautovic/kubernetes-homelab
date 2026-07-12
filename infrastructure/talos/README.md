@@ -16,17 +16,26 @@ backed up on the management VM (`zlaya@192.168.1.199`).
 | CNI | none at install — Cilium bootstrapped via Helm, then Flux-managed |
 | kube-proxy | disabled (Cilium kube-proxy replacement, KubePrism `localhost:7445`) |
 
-## System extensions (required by Longhorn)
+## System extensions and factory image
 
-The installer image must be a Talos **factory image** including at least:
+All three nodes run the same factory schematic (verified 2026-07-12 via
+`talosctl get extensions`):
 
-- `siderolabs/iscsi-tools`
-- `siderolabs/util-linux-tools`
+```
+factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.13.3
+```
 
-<!-- TODO: verify against a live node and record the exact factory image ID:
-     talosctl -n <node> get extensions
-     talosctl -n <node> get machineconfig -o yaml | grep install.image -->
-Factory image ID: `factory.talos.dev/installer/<TODO>:v1.13.3`
+Extensions included in the schematic:
+
+- `siderolabs/i915` — Intel iGPU firmware/driver (Plex HW transcode)
+- `siderolabs/intel-ucode` — CPU microcode updates
+- `siderolabs/qemu-guest-agent` — Proxmox guest integration
+- `siderolabs/iscsi-tools` — required by Longhorn
+- `siderolabs/util-linux-tools` — required by Longhorn
+
+When upgrading Talos, keep the same schematic hash and change only the
+version tag; regenerate the schematic at https://factory.talos.dev only
+if the extension set itself changes.
 
 ## Rebuilding a dead node
 
