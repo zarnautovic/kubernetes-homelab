@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: homepage
   namespace: homepage
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   selector:
@@ -12,8 +14,6 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: homepage
-      annotations:
-        reloader.stakater.com/auto: "true"
     spec:
       serviceAccountName: homepage
       containers:

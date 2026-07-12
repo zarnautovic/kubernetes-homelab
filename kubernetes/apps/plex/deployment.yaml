@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: plex
   namespace: plex
+  annotations:
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   strategy:
