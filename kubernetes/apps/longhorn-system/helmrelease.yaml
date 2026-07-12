@@ -27,7 +27,9 @@ spec:
       defaultDataPath: /var/mnt/longhorn
       defaultReplicaCount: 3
       storageMinimalAvailablePercentage: 10
-      nodeDrainPolicy: always-allow
+      # Drains wait if the node holds a volume's last healthy replica, so a
+      # rolling Talos upgrade can't take out a degraded volume's only copy.
+      nodeDrainPolicy: block-if-contains-last-replica
       backupTarget: nfs://192.168.1.101:/mnt/backup-pool/backup?nfsOptions=nfsvers=3,nolock
       # Live-upgrade volume engines to the default (chart) engine image, 1 per node at a
       # time, so engines never drift behind the Longhorn version on future upgrades.
