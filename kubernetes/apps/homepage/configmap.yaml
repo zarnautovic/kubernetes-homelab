@@ -28,7 +28,7 @@ data:
     - Developer:
         - Github:
             - abbr: GH
-              href: https://github.com/zarnautovic 
+              href: https://github.com/zarnautovic
   services.yaml: |
     - Servers:
         - Proxmox:
