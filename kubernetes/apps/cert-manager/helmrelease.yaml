@@ -15,6 +15,13 @@ spec:
         kind: HelmRepository
         name: jetstack
         namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
   values:
     crds:
       enabled: true

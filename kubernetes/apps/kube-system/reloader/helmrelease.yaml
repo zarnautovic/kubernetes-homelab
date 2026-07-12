@@ -8,7 +8,8 @@ spec:
   chart:
     spec:
       chart: reloader
-      version: ">=1.0.0"
+      # Bounded to the 2.x major; bump deliberately on a new major.
+      version: "2.x"
       sourceRef:
         kind: HelmRepository
         name: stakater
