@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: autobrr
-          image: ghcr.io/autobrr/autobrr:latest
+          image: ghcr.io/autobrr/autobrr:v1.80.0
           env:
             - name: TZ
               value: Europe/Zagreb

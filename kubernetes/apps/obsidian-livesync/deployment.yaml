@@ -19,7 +19,7 @@ spec:
         fsGroup: 5984
       initContainers:
         - name: copy-config
-          image: busybox:latest
+          image: busybox:1.37
           command:
             - sh
             - -c
@@ -31,7 +31,7 @@ spec:
               mountPath: /opt/couchdb/etc/local.d
       containers:
         - name: couchdb
-          image: couchdb:3
+          image: couchdb:3.5.1
           env:
             - name: TZ
               value: Europe/Zagreb

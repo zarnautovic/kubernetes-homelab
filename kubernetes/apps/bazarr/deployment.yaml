@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: bazarr
-          image: ghcr.io/linuxserver/bazarr:latest
+          image: ghcr.io/linuxserver/bazarr:v1.5.6-ls351
           env:
             - name: PUID
               value: "3000"

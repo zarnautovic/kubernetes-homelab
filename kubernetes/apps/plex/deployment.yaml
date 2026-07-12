@@ -38,7 +38,7 @@ spec:
               subPath: plex-backup
       containers:
         - name: plex
-          image: plexinc/pms-docker:latest
+          image: plexinc/pms-docker:1.43.2.10687-563d026ea
           ports:
             - containerPort: 32400
               name: web
