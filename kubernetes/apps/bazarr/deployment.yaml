@@ -47,11 +47,23 @@ spec:
             - name: config
               mountPath: /config
             - name: media
-              mountPath: /movies
+              mountPath: /data/movies
               subPath: movies
             - name: media
-              mountPath: /tvshows
+              mountPath: /data/tvshows
               subPath: tvshows
+            - name: media
+              mountPath: /data/cartons
+              subPath: cartons
+            - name: media
+              mountPath: /data/cartons-tvshows
+              subPath: cartons-tvshows
+            - name: media
+              mountPath: /data/anime
+              subPath: anime
+            - name: media
+              mountPath: /data/marijana
+              subPath: marijana
       volumes:
         - name: config
           persistentVolumeClaim:
