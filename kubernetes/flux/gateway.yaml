@@ -7,13 +7,11 @@ spec:
   interval: 10m
   path: ./kubernetes/apps/gateway-api
   prune: true
+  wait: true
   sourceRef:
     kind: GitRepository
     name: flux-system
   dependsOn:
     - name: gateway-api-crds
     - name: cert-manager
-  decryption:
-    provider: sops
-    secretRef:
-      name: sops-age
+    - name: cilium

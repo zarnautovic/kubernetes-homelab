@@ -7,6 +7,9 @@ spec:
   interval: 10m
   path: ./kubernetes/apps/longhorn-system
   prune: true
+  wait: true
   sourceRef:
     kind: GitRepository
     name: flux-system
+  dependsOn:
+    - name: gateway-api-crds
