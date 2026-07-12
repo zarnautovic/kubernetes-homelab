@@ -19,6 +19,12 @@ spec:
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v1.13.1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
           ports:
             - containerPort: 3000
           env:

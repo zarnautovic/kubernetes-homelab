@@ -32,6 +32,12 @@ spec:
       containers:
         - name: couchdb
           image: couchdb:3.5.1
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
           env:
             - name: TZ
               value: Europe/Zagreb

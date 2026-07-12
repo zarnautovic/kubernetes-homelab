@@ -18,6 +18,12 @@ spec:
       containers:
         - name: radarr
           image: ghcr.io/linuxserver/radarr:6.2.1.10461-ls308
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
           env:
             - name: PUID
               value: "3000"

@@ -18,6 +18,12 @@ spec:
       containers:
         - name: autobrr
           image: ghcr.io/autobrr/autobrr:v1.80.0
+          resources:
+            requests:
+              cpu: 20m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
           env:
             - name: TZ
               value: Europe/Zagreb

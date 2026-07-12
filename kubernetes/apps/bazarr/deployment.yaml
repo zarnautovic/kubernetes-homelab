@@ -18,6 +18,12 @@ spec:
       containers:
         - name: bazarr
           image: ghcr.io/linuxserver/bazarr:v1.5.6-ls351
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
           env:
             - name: PUID
               value: "3000"

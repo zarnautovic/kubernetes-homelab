@@ -18,6 +18,12 @@ spec:
       containers:
         - name: prowlarr
           image: ghcr.io/linuxserver/prowlarr:2.4.0.5397-ls150
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
           env:
             - name: PUID
               value: "3000"
