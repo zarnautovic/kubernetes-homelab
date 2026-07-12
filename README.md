@@ -102,7 +102,7 @@ Three distinct tiers:
 - **Longhorn v1.12.0** — replicated (×3) block storage for app config/database PVCs. Data lives on each node's dedicated disk at `/var/mnt/longhorn` (`/dev/sdb`). Volume engines auto-upgrade to the chart's default image (`concurrentAutomaticEngineUpgradePerNodeLimit: 1`), so they never drift behind the Longhorn version.
 - **Longhorn backups** — daily snapshots pushed **off-cluster** to TrueNAS NFS.
   - Target: `nfs://192.168.1.101:/mnt/backup-pool/backup` (NFSv3, nolock)
-  - Recurring job `backup-critical` (group `default`): all volumes, daily 02:00, retain 7
+  - Layered recurring jobs (group `default`, all volumes): `backup-daily` 02:00 retain 7, `backup-weekly` Sun 03:00 retain 8, `backup-monthly` 1st 04:00 retain 6 — restore points from yesterday back to ~6 months
 - **TrueNAS NFS (media)** — bulk media + downloads, mounted by the media stack.
   - `nfs://192.168.1.101:/mnt/main-pool/media`
   - PVs use `storageClassName: ""`, RWX, Retain policy, pre-bound via `claimRef`
