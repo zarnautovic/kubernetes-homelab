@@ -19,6 +19,15 @@ spec:
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v1.13.1
+          readinessProbe:
+            tcpSocket:
+              port: 3000
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 3000
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m

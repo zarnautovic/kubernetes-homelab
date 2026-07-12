@@ -18,6 +18,15 @@ spec:
       containers:
         - name: prowlarr
           image: ghcr.io/linuxserver/prowlarr:2.4.0.5397-ls150
+          readinessProbe:
+            tcpSocket:
+              port: 9696
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 9696
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m

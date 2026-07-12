@@ -18,6 +18,15 @@ spec:
       containers:
         - name: bazarr
           image: ghcr.io/linuxserver/bazarr:v1.5.6-ls351
+          readinessProbe:
+            tcpSocket:
+              port: 6767
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 6767
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m

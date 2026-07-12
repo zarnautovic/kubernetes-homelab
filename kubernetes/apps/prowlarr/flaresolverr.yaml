@@ -16,6 +16,15 @@ spec:
       containers:
         - name: flaresolverr
           image: ghcr.io/flaresolverr/flaresolverr:v3.5.0
+          readinessProbe:
+            tcpSocket:
+              port: 8191
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8191
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m

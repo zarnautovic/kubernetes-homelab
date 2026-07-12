@@ -39,6 +39,20 @@ spec:
       containers:
         - name: plex
           image: plexinc/pms-docker:1.43.2.10687-563d026ea
+          readinessProbe:
+            tcpSocket:
+              port: 32400
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 32400
+            periodSeconds: 30
+            failureThreshold: 5
+          startupProbe:
+            tcpSocket:
+              port: 32400
+            periodSeconds: 10
+            failureThreshold: 30
           ports:
             - containerPort: 32400
               name: web

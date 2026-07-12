@@ -18,6 +18,15 @@ spec:
       containers:
         - name: autobrr
           image: ghcr.io/autobrr/autobrr:v1.80.0
+          readinessProbe:
+            tcpSocket:
+              port: 7474
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 7474
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 20m

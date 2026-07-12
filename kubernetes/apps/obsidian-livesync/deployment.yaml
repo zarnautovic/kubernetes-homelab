@@ -32,6 +32,15 @@ spec:
       containers:
         - name: couchdb
           image: couchdb:3.5.1
+          readinessProbe:
+            tcpSocket:
+              port: 5984
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 5984
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m

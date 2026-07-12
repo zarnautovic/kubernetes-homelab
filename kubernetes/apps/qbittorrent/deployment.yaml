@@ -63,6 +63,15 @@ spec:
       containers:
         - name: qbittorrent
           image: ghcr.io/linuxserver/qbittorrent:5.2.1
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 5
           env:
             - name: PUID
               value: "3000"

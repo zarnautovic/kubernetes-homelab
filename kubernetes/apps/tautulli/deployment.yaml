@@ -18,6 +18,15 @@ spec:
       containers:
         - name: tautulli
           image: ghcr.io/tautulli/tautulli:v2.17.2
+          readinessProbe:
+            tcpSocket:
+              port: 8181
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8181
+            periodSeconds: 30
+            failureThreshold: 5
           resources:
             requests:
               cpu: 50m
