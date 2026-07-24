@@ -8,3 +8,7 @@ resources:
   - deployment.yaml
   - service.yaml
   - httproute.yaml
+  - bridge-pv.yaml
+  - bridge-pvc.yaml
+  - bridge-secret.yaml
+  - bridge-deployment.yaml

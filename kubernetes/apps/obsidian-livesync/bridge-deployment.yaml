@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livesync-bridge
+  namespace: obsidian-livesync
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: livesync-bridge
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: livesync-bridge
+    spec:
+      initContainers:
+        # /app/dat must stay writable for runtime state, so the read-only
+        # secret is copied in rather than mounted directly.
+        - name: copy-config
+          image: busybox:1.37
+          command:
+            - sh
+            - -c
+            - cp /config-readonly/config.json /app/dat/config.json
+          volumeMounts:
+            - name: config-readonly
+              mountPath: /config-readonly
+            - name: dat
+              mountPath: /app/dat
+      containers:
+        - name: livesync-bridge
+          image: ghcr.io/zarnautovic/livesync-bridge:f27f78c
+          env:
+            - name: TZ
+              value: Europe/Zagreb
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: dat
+              mountPath: /app/dat
+            - name: vault-mirror
+              mountPath: /app/data
+      volumes:
+        - name: config-readonly
+          secret:
+            secretName: livesync-bridge-config
+        - name: dat
+          emptyDir: {}
+        - name: vault-mirror
+          persistentVolumeClaim:
+            claimName: vault-mirror

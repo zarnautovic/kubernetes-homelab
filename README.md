@@ -62,7 +62,7 @@ kubernetes/
     ├── plex/           # Media server
     ├── tautulli/       # Plex analytics
     ├── intel-gpu-plugin/ # iGPU device plugin
-    └── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync
+    └── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.
@@ -79,6 +79,7 @@ kubernetes/
 | Authentik | authentik | authentik.example.com | SSO / identity provider, embedded outpost |
 | Homepage | homepage | example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
+| LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
 
 ### Media Stack
 
@@ -106,6 +107,8 @@ Three distinct tiers:
 - **TrueNAS NFS (media)** — bulk media + downloads, mounted by the media stack.
   - `nfs://192.168.1.101:/mnt/main-pool/media`
   - PVs use `storageClassName: ""`, RWX, Retain policy, pre-bound via `claimRef`
+- **TrueNAS NFS (vault mirror)** — plain-file mirror of the Obsidian vault, written by livesync-bridge and mounted read-mostly by Home Assistant and automation.
+  - `nfs://192.168.1.101:/mnt/main-pool/vault-mirror`
 
 ## Secrets
 
