@@ -138,6 +138,10 @@ data:
             raw = re.sub(r'"[a-z0-9_]+"\s*:\s*(?=[,}])', "", raw)
             raw = re.sub(r"\{\s*,", "{", raw)
             raw = re.sub(r",\s*(?=[,}])", "", raw)
+            # Locale decimal commas: Shortcuts renders 55.676 as "55,676"
+            # on hr/de phones. Between two digits a comma can only mean a
+            # decimal point here — JSON's own commas never sit digit-digit.
+            raw = re.sub(r"(\d),(\d)", r"\1.\2", raw)
             try:
                 payload = json.loads(raw)
             except ValueError:
