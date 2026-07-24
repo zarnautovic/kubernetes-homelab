@@ -12,3 +12,6 @@ resources:
   - bridge-pvc.yaml
   - bridge-secret.yaml
   - bridge-deployment.yaml
+  - webhook-configmap.yaml
+  - webhook-secret.yaml
+  - webhook-service.yaml

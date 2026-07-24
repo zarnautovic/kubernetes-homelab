@@ -45,6 +45,10 @@ spec:
             # obsidian skill resolves the vault through this variable.
             - name: OBSIDIAN_VAULT_PATH
               value: /vault
+            # Writes go through the vault-webhook sidecar in the bridge pod
+            # (reads stay on /vault) — see the vault-webhook skill.
+            - name: VAULT_WEBHOOK_URL
+              value: http://vault-webhook.obsidian-livesync.svc.cluster.local:8080
           ports:
             - name: api
               containerPort: 8642

@@ -48,6 +48,49 @@ spec:
               mountPath: /app/dat
             - name: vault-mirror
               mountPath: /app/data
+        # Write API for agents. Shares the vault-mirror volume with the
+        # bridge container, so its writes hit the same mount the bridge
+        # watches — synced to CouchDB instantly, unlike external NFS
+        # clients whose writes wait for a pod restart.
+        - name: vault-webhook
+          image: python:3.13-slim
+          command: ["python", "/opt/webhook/webhook.py"]
+          securityContext:
+            runAsUser: 1993
+            runAsGroup: 1993
+          env:
+            - name: VAULT_DIR
+              value: /data/vault
+            - name: WEBHOOK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vault-webhook-token
+                  key: WEBHOOK_TOKEN
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 30
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
+          ports:
+            - name: http
+              containerPort: 8080
+          volumeMounts:
+            - name: vault-mirror
+              mountPath: /data
+            - name: webhook-script
+              mountPath: /opt/webhook
       volumes:
         - name: config-readonly
           secret:
@@ -57,3 +100,6 @@ spec:
         - name: vault-mirror
           persistentVolumeClaim:
             claimName: vault-mirror
+        - name: webhook-script
+          configMap:
+            name: vault-webhook-script
