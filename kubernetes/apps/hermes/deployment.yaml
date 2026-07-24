@@ -45,6 +45,14 @@ spec:
             # hermes-env secret (auth is mandatory on non-loopback binds).
             - name: HERMES_DASHBOARD
               value: "1"
+            # SSO via Authentik (OIDC, public PKCE client — the ID is not
+            # a secret). Basic auth from the secret stays as a fallback.
+            - name: HERMES_DASHBOARD_OIDC_ISSUER
+              value: https://authentik.zlaya.tech/application/o/hermes/
+            - name: HERMES_DASHBOARD_OIDC_CLIENT_ID
+              value: SCLmsXzawFwx5Aa6CJh3tso1lLiNbELKkZzmuWSZ
+            - name: HERMES_DASHBOARD_PUBLIC_URL
+              value: https://hermes.zlaya.tech
             # Read-only NFS mount of the Obsidian vault mirror; the bundled
             # obsidian skill resolves the vault through this variable.
             - name: OBSIDIAN_VAULT_PATH
