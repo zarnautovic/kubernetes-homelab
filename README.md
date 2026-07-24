@@ -62,7 +62,8 @@ kubernetes/
     ├── plex/           # Media server
     ├── tautulli/       # Plex analytics
     ├── intel-gpu-plugin/ # iGPU device plugin
-    └── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
+    ├── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
+    └── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.
@@ -80,6 +81,7 @@ kubernetes/
 | Homepage | homepage | example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
 | LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
+| Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only |
 
 ### Media Stack
 
