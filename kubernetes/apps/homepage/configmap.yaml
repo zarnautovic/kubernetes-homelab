@@ -21,6 +21,8 @@ data:
         icon: mdi-play-circle
         style: row
         columns: 4
+      AI:
+        icon: mdi-robot
     providers:
       longhorn:
         url: http://longhorn-frontend.longhorn-system
@@ -106,6 +108,11 @@ data:
               type: bazarr
               url: http://bazarr.bazarr.svc.cluster.local:6767
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
+    - AI:
+        - Hermes:
+            icon: mdi-robot
+            href: "https://hermes.zlaya.tech"
+            description: Autonomous agent — dashboard
     - Security:
         - Authentik:
             icon: authentik.svg
