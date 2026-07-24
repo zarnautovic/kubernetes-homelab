@@ -41,6 +41,10 @@ spec:
           env:
             - name: TZ
               value: Europe/Zagreb
+            # Read-only NFS mount of the Obsidian vault mirror; the bundled
+            # obsidian skill resolves the vault through this variable.
+            - name: OBSIDIAN_VAULT_PATH
+              value: /vault
           ports:
             - name: api
               containerPort: 8642
