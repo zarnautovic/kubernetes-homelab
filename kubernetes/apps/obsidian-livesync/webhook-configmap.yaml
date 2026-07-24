@@ -131,8 +131,15 @@ data:
             length = int(self.headers.get("Content-Length", 0))
             if length > MAX_BODY:
                 return self._reply(413, "too large")
+            raw = self.rfile.read(length).decode("utf-8", "replace")
+            # Shortcuts can't omit a key whose variable is empty — it sends
+            # '"kilaza":}' and breaks the JSON. Drop such valueless keys so
+            # one missing metric doesn't reject the whole payload.
+            raw = re.sub(r'"[a-z0-9_]+"\s*:\s*(?=[,}])', "", raw)
+            raw = re.sub(r"\{\s*,", "{", raw)
+            raw = re.sub(r",\s*(?=[,}])", "", raw)
             try:
-                payload = json.loads(self.rfile.read(length))
+                payload = json.loads(raw)
             except ValueError:
                 return self._reply(400, "bad json")
             entries = payload if isinstance(payload, list) else [payload]
@@ -152,7 +159,9 @@ data:
                         value, (int, float, str)
                     ):
                         return self._reply(400, f"bad value: {key}")
-                    clean[key] = str(value).replace("\n", " ").strip()[:200]
+                    value = str(value).replace("\n", " ").strip()[:200]
+                    if value:  # empty string = metric absent today, skip
+                        clean[key] = value
                 if not clean:
                     continue
                 path = os.path.join(VAULT_DIR, IMPORT_DIR, f"{date}.md")
