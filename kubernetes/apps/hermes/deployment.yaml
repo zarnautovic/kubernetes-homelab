@@ -41,6 +41,10 @@ spec:
           env:
             - name: TZ
               value: Europe/Zagreb
+            # Web dashboard on 9119; basic-auth credentials come from the
+            # hermes-env secret (auth is mandatory on non-loopback binds).
+            - name: HERMES_DASHBOARD
+              value: "1"
             # Read-only NFS mount of the Obsidian vault mirror; the bundled
             # obsidian skill resolves the vault through this variable.
             - name: OBSIDIAN_VAULT_PATH
@@ -52,6 +56,8 @@ spec:
           ports:
             - name: api
               containerPort: 8642
+            - name: dashboard
+              containerPort: 9119
           volumeMounts:
             - name: data
               mountPath: /opt/data
