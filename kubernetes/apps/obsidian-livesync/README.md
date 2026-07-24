@@ -53,8 +53,8 @@ the remote, so they don't need to be kept in sync manually.
   made through its own mount. Files written to the NFS export by *other*
   machines may not sync until the pod restarts (`scanOfflineChanges`
   picks them up at startup). Vault → file direction is always live.
-- The container runs as the `deno` user (uid 1000); the TrueNAS dataset
-  must allow uid 1000 to write.
+- The container runs as the `deno` user (uid **1993** in the official
+  Deno image); the TrueNAS dataset must allow uid 1993 to write.
 - First run after a config change can be started with `--reset` (edit
   the deployment args temporarily) to rescan everything from scratch.
 
