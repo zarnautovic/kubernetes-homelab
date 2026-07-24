@@ -23,17 +23,9 @@ spec:
         - name: hermes
           image: nousresearch/hermes-agent:v2026.7.20
           args: ["gateway", "run"]
-          readinessProbe:
-            tcpSocket:
-              port: 8642
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: 8642
-            initialDelaySeconds: 60
-            periodSeconds: 30
-            failureThreshold: 5
+          # No TCP probes: the OpenAI-compatible API (8642) only listens
+          # when explicitly enabled, and the image supervises the gateway
+          # internally via s6 (auto-restart on crash).
           resources:
             requests:
               cpu: 250m
