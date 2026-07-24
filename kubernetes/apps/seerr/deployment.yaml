@@ -15,11 +15,22 @@ spec:
       labels:
         app.kubernetes.io/name: seerr
     spec:
+      # The image already runs as the node user (uid 1000); declare it and
+      # drop everything else so the pod satisfies the restricted PSS profile.
       securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: seerr
           image: ghcr.io/seerr-team/seerr:v3.3.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           readinessProbe:
             tcpSocket:
               port: 5055
