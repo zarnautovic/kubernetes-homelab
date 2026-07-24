@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vault-webhook
+  namespace: obsidian-livesync
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+  hostnames:
+    - "health.zlaya.tech"
+  rules:
+    # Deliberately expose ONLY the health-metrics endpoint (plus liveness):
+    # the /notes API stays cluster-internal even though it is token-authed.
+    - matches:
+        - path:
+            type: Exact
+            value: /health-metrics
+        - path:
+            type: Exact
+            value: /healthz
+      backendRefs:
+        - name: vault-webhook
+          port: 8080

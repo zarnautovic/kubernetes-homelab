@@ -16,16 +16,44 @@ data:
       GET    /notes/<path>     read a note
       PUT    /notes/<path>     create/overwrite a note (body = content)
       DELETE /notes/<path>     delete a note
+      POST   /health-metrics   upsert daily Apple Health aggregates into
+                               Health/Import/<date>.md — authed by the
+                               separate HEALTH_TOKEN (the phone only gets
+                               this narrower capability, never /notes)
     """
     import hmac
+    import json
     import os
     import posixpath
+    import re
     import urllib.parse
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     VAULT_DIR = os.environ["VAULT_DIR"]
     TOKEN = os.environ["WEBHOOK_TOKEN"]
+    HEALTH_TOKEN = os.environ["HEALTH_TOKEN"]
     MAX_BODY = 10 * 1024 * 1024
+    IMPORT_DIR = "Health/Import"
+    DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    KEY_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
+    NUM_RE = re.compile(r"^-?\d+(\.\d+)?$")
+
+    def read_flat_frontmatter(path):
+        """Parse the flat `key: value` frontmatter of an import note."""
+        try:
+            with open(path, encoding="utf-8") as f:
+                lines = f.read().splitlines()
+        except FileNotFoundError:
+            return {}
+        if not lines or lines[0] != "---":
+            return {}
+        out = {}
+        for line in lines[1:]:
+            if line == "---":
+                break
+            key, _, value = line.partition(":")
+            out[key.strip()] = value.strip().strip('"')
+        return out
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "vault-webhook"
@@ -93,6 +121,60 @@ data:
                 f.write(body)
             os.replace(tmp, path)
             return self._reply(200, "written")
+
+        def do_POST(self):
+            if self.path != "/health-metrics":
+                return self._reply(404, "not found")
+            got = self.headers.get("Authorization", "")
+            if not hmac.compare_digest(got, f"Bearer {HEALTH_TOKEN}"):
+                return self._reply(401, "unauthorized")
+            length = int(self.headers.get("Content-Length", 0))
+            if length > MAX_BODY:
+                return self._reply(413, "too large")
+            try:
+                payload = json.loads(self.rfile.read(length))
+            except ValueError:
+                return self._reply(400, "bad json")
+            entries = payload if isinstance(payload, list) else [payload]
+            written = []
+            for entry in entries:
+                if not isinstance(entry, dict):
+                    return self._reply(400, "bad entry")
+                date = str(entry.get("date", ""))
+                metrics = entry.get("metrics")
+                if not DATE_RE.match(date) or not isinstance(metrics, dict):
+                    return self._reply(400, "bad entry")
+                clean = {}
+                for key, value in metrics.items():
+                    if not KEY_RE.match(str(key)):
+                        return self._reply(400, f"bad key: {key}")
+                    if isinstance(value, bool) or not isinstance(
+                        value, (int, float, str)
+                    ):
+                        return self._reply(400, f"bad value: {key}")
+                    clean[key] = str(value).replace("\n", " ").strip()[:200]
+                if not clean:
+                    continue
+                path = os.path.join(VAULT_DIR, IMPORT_DIR, f"{date}.md")
+                # Merge into any existing import for the date, so partial
+                # sends (e.g. sleep at 09:00, steps re-sent later) add up.
+                merged = read_flat_frontmatter(path)
+                merged.pop("spojeno", None)
+                merged.update(clean)
+                lines = ["---"]
+                for key, value in merged.items():
+                    if NUM_RE.match(value):
+                        lines.append(f"{key}: {value}")
+                    else:
+                        lines.append(f'{key}: "{value}"')
+                lines += ["spojeno: ne", "---", ""]
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                tmp = os.path.join(os.path.dirname(path), f".{date}.md.tmp")
+                with open(tmp, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines))
+                os.replace(tmp, path)
+                written.append(date)
+            return self._reply(200, "imported: " + ", ".join(written))
 
         def do_DELETE(self):
             if not self._authed():
