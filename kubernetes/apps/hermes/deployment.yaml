@@ -17,6 +17,13 @@ spec:
       labels:
         app.kubernetes.io/name: hermes
     spec:
+      # OIDC calls to Authentik must not leave the LAN: the public DNS
+      # route goes through Cloudflare, which 403s Python's urllib UA on
+      # the JWKS fetch. Point the hostname at the internal gateway LB.
+      hostAliases:
+        - ip: "192.168.1.240"
+          hostnames:
+            - authentik.zlaya.tech
       securityContext:
         fsGroup: 10000
       containers:
