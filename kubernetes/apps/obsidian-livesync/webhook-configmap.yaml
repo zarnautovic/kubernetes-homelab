@@ -72,11 +72,15 @@ data:
                 if not DATE_RE.match(date):
                     continue
                 if key == "san":
-                    value = point.get("asleep", point.get("totalSleep"))
+                    # totalSleep is the real night total; 'asleep' is a
+                    # separate (often zero) bucket, so it comes last.
+                    value = point.get("totalSleep")
                     if value is None:
                         stages = [point.get(s) for s in ("core", "deep", "rem")]
                         stages = [s for s in stages if isinstance(s, (int, float))]
-                        value = sum(stages) if stages else point.get("qty")
+                        value = sum(stages) if stages else point.get("asleep")
+                    if value is None:
+                        value = point.get("qty")
                 else:
                     value = point.get("qty")
                 if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -87,7 +91,13 @@ data:
                 value = round(value, 2)
                 if key in ("koraci", "trening_min", "rhr") or value == int(value):
                     value = int(round(value))
-                per_date.setdefault(date, {})[key] = value
+                bucket = per_date.setdefault(date, {})
+                if key == "san":
+                    # A day can hold several sleep sessions (night + naps);
+                    # keep the longest one — that's the night, matching how
+                    # Health itself reports "Time Asleep".
+                    value = max(value, bucket.get(key, 0))
+                bucket[key] = value
         return [{"date": d, "metrics": m} for d, m in sorted(per_date.items())]
 
     def read_flat_frontmatter(path):
