@@ -50,6 +50,8 @@ data:
         "body_fat_percentage": "masnoca",
         "basal_energy_burned": "bazalne_kalorije",
         "vo2_max": "vo2max",
+        "vo2max": "vo2max",
+        "cardio_fitness": "vo2max",
     }
 
     def hae_entries(payload):
