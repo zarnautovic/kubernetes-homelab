@@ -47,6 +47,9 @@ data:
         "apple_exercise_time": "trening_min",
         "heart_rate_variability": "hrv",
         "sleep_analysis": "san",
+        "body_fat_percentage": "masnoca",
+        "basal_energy_burned": "bazalne_kalorije",
+        "vo2_max": "vo2max",
     }
 
     def hae_entries(payload):
@@ -98,6 +101,31 @@ data:
                     # Health itself reports "Time Asleep".
                     value = max(value, bucket.get(key, 0))
                 bucket[key] = value
+        workouts = payload.get("data", {}).get("workouts")
+        if isinstance(workouts, list) and workouts:
+            # Shape not confirmed yet — keep a sample in the log.
+            print(f"hae workouts: {workouts!r}"[:600], flush=True)
+            for workout in workouts:
+                if not isinstance(workout, dict):
+                    continue
+                date = str(workout.get("start", workout.get("date", "")))[:10]
+                if not DATE_RE.match(date):
+                    continue
+                name = str(workout.get("name", "trening"))
+                part = name
+                duration = workout.get("duration")
+                if isinstance(duration, (int, float)) and duration > 0:
+                    # Heuristic until confirmed: big numbers are seconds.
+                    minutes = duration / 60 if duration > 300 else duration
+                    part += f" {int(round(minutes))}min"
+                energy = workout.get("activeEnergyBurned")
+                if isinstance(energy, dict):
+                    energy = energy.get("qty")
+                if isinstance(energy, (int, float)) and energy > 0:
+                    part += f" {int(round(energy))}kcal"
+                bucket = per_date.setdefault(date, {})
+                existing = bucket.get("treninzi")
+                bucket["treninzi"] = f"{existing}; {part}" if existing else part
         return [{"date": d, "metrics": m} for d, m in sorted(per_date.items())]
 
     def read_flat_frontmatter(path):
