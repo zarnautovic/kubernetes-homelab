@@ -38,6 +38,49 @@ data:
     KEY_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
     NUM_RE = re.compile(r"^-?\d+(\.\d+)?$")
 
+    # Health Auto Export metric names -> our frontmatter keys.
+    HAE_METRIC_MAP = {
+        "step_count": "koraci",
+        "active_energy": "aktivne_kalorije",
+        "weight_body_mass": "kilaza",
+        "resting_heart_rate": "rhr",
+        "apple_exercise_time": "trening_min",
+        "heart_rate_variability": "hrv",
+        "sleep_analysis": "san",
+    }
+
+    def hae_entries(payload):
+        """Translate a Health Auto Export payload into our entry list."""
+        metrics = payload.get("data", {}).get("metrics")
+        if not isinstance(metrics, list):
+            return None
+        per_date = {}
+        for metric in metrics:
+            key = HAE_METRIC_MAP.get(str(metric.get("name", "")))
+            if not key or not isinstance(metric.get("data"), list):
+                continue
+            for point in metric["data"]:
+                if not isinstance(point, dict):
+                    continue
+                date = str(point.get("date", ""))[:10]
+                if not DATE_RE.match(date):
+                    continue
+                if key == "san":
+                    value = point.get("asleep", point.get("totalSleep"))
+                    if value is None:
+                        stages = [point.get(s) for s in ("core", "deep", "rem")]
+                        stages = [s for s in stages if isinstance(s, (int, float))]
+                        value = sum(stages) if stages else point.get("qty")
+                else:
+                    value = point.get("qty")
+                if isinstance(value, bool) or not isinstance(value, (int, float)):
+                    continue
+                value = round(float(value), 2)
+                if value == int(value):
+                    value = int(value)
+                per_date.setdefault(date, {})[key] = value
+        return [{"date": d, "metrics": m} for d, m in sorted(per_date.items())]
+
     def read_flat_frontmatter(path):
         """Parse the flat `key: value` frontmatter of an import note."""
         try:
@@ -146,7 +189,15 @@ data:
                 payload = json.loads(raw)
             except ValueError:
                 return self._reply(400, "bad json")
-            entries = payload if isinstance(payload, list) else [payload]
+            if isinstance(payload, dict) and "data" in payload:
+                entries = hae_entries(payload)
+                if entries is None:
+                    return self._reply(400, "unrecognized payload")
+                if not entries:
+                    # Log a sample so an unexpected HAE shape can be debugged.
+                    print(f"hae: no known metrics in {raw[:300]!r}", flush=True)
+            else:
+                entries = payload if isinstance(payload, list) else [payload]
             written = []
             for entry in entries:
                 if not isinstance(entry, dict):
