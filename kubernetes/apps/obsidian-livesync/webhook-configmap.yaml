@@ -56,9 +56,15 @@ data:
             return None
         per_date = {}
         for metric in metrics:
-            key = HAE_METRIC_MAP.get(str(metric.get("name", "")))
+            name = str(metric.get("name", ""))
+            key = HAE_METRIC_MAP.get(name)
             if not key or not isinstance(metric.get("data"), list):
                 continue
+            units = str(metric.get("units", "")).lower()
+            if name == "sleep_analysis":
+                # Sleep date attribution differs between HAE versions —
+                # log the raw points until the mapping is confirmed.
+                print(f"hae sleep: {metric['data']!r}"[:600], flush=True)
             for point in metric["data"]:
                 if not isinstance(point, dict):
                     continue
@@ -75,9 +81,12 @@ data:
                     value = point.get("qty")
                 if isinstance(value, bool) or not isinstance(value, (int, float)):
                     continue
-                value = round(float(value), 2)
-                if value == int(value):
-                    value = int(value)
+                value = float(value)
+                if units in ("kj", "kilojoules"):
+                    value /= 4.184
+                value = round(value, 2)
+                if key in ("koraci", "trening_min", "rhr") or value == int(value):
+                    value = int(round(value))
                 per_date.setdefault(date, {})[key] = value
         return [{"date": d, "metrics": m} for d, m in sorted(per_date.items())]
 
