@@ -15,12 +15,17 @@ spec:
     #     phone's HAE app authenticates with the Bearer token)
     #   everything else (dashboard, read APIs) -> router WITH the
     #     chain-authentik middleware
-    # In-cluster we route the whole hostname to the service; the
-    # tokenless read endpoints rely on that Traefik split externally.
+    # Until that second Traefik router exists, this route deliberately
+    # forwards ONLY the ingest paths — widening it to PathPrefix / with
+    # the current single no-auth Traefik rule would publish the
+    # dashboard to the internet unauthenticated.
     - matches:
         - path:
-            type: PathPrefix
-            value: /
+            type: Exact
+            value: /health-metrics
+        - path:
+            type: Exact
+            value: /healthz
       backendRefs:
         - name: health-api
           port: 8080
