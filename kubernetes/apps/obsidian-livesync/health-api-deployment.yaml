@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: health-api
+  namespace: obsidian-livesync
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    # SQLite on RWO storage: never two writers at once.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: health-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: health-api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: health-api
+          # Source: https://github.com/zarnautovic/health-api
+          image: ghcr.io/zarnautovic/health-api:e68b0d9
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: TZ
+              value: Europe/Zagreb
+            # Writes go through the vault-webhook sidecar so the bridge's
+            # inotify watcher picks them up; reads use the NFS mirror.
+            - name: WEBHOOK_URL
+              value: http://vault-webhook.obsidian-livesync.svc.cluster.local:8080
+            - name: WEBHOOK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vault-webhook-token
+                  key: WEBHOOK_TOKEN
+            - name: HEALTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: vault-webhook-token
+                  key: HEALTH_TOKEN
+            - name: VAULT_DIR
+              value: /vault
+            - name: DB_PATH
+              value: /data/health.db
+          ports:
+            - name: http
+              containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: vault
+              mountPath: /vault
+              subPath: vault
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: vault
+          persistentVolumeClaim:
+            claimName: vault-mirror
+        - name: data
+          persistentVolumeClaim:
+            claimName: health-api-data
