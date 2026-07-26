@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: health-api
-  namespace: obsidian-livesync
+  namespace: health-api
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
@@ -34,6 +34,9 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+          envFrom:
+            - secretRef:
+                name: health-api-env
           env:
             - name: TZ
               value: Europe/Zagreb
@@ -41,16 +44,6 @@ spec:
             # inotify watcher picks them up; reads use the NFS mirror.
             - name: WEBHOOK_URL
               value: http://vault-webhook.obsidian-livesync.svc.cluster.local:8080
-            - name: WEBHOOK_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vault-webhook-token
-                  key: WEBHOOK_TOKEN
-            - name: HEALTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vault-webhook-token
-                  key: HEALTH_TOKEN
             - name: VAULT_DIR
               value: /vault
             - name: DB_PATH
@@ -75,14 +68,13 @@ spec:
           volumeMounts:
             - name: vault
               mountPath: /vault
-              subPath: vault
               readOnly: true
             - name: data
               mountPath: /data
       volumes:
         - name: vault
           persistentVolumeClaim:
-            claimName: vault-mirror
+            claimName: vault-ro
         - name: data
           persistentVolumeClaim:
             claimName: health-api-data

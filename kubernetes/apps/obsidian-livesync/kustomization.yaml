@@ -16,6 +16,3 @@ resources:
   - webhook-secret.yaml
   - webhook-service.yaml
   - webhook-httproute.yaml
-  - health-api-pvc.yaml
-  - health-api-deployment.yaml
-  - health-api-service.yaml
