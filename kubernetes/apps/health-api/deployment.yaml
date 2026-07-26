@@ -48,6 +48,10 @@ spec:
               value: /vault
             - name: DB_PATH
               value: /data/health.db
+            # A rescan is cheap (a handful of notes, tens of ms), so keep the
+            # lag between an Obsidian edit and the dashboard short.
+            - name: RESCAN_INTERVAL
+              value: 5m
           ports:
             - name: http
               containerPort: 8080
