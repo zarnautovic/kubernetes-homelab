@@ -11,13 +11,15 @@ spec:
     - "health.zlaya.tech"
   rules:
     # One hostname, two protection models — split at the Traefik VM:
-    #   /health-metrics + /healthz  -> router WITHOUT authentik (the
-    #     phone's HAE app authenticates with the Bearer token)
+    #   /health-metrics, /strong-import, /healthz -> router WITHOUT
+    #     authentik; the phone (Health Auto Export, and the Shortcut that
+    #     uploads the Strong CSV) authenticates with the Bearer token
     #   everything else (dashboard, read APIs) -> router WITH the
     #     chain-authentik middleware
     # The Traefik split is live (verified: anonymous / gets a 302 to
-    # Authentik, /healthz stays open), so the whole hostname can flow
-    # to the service.
+    # Authentik, /healthz stays open, an anonymous POST to
+    # /strong-import gets a 401 from the API rather than a redirect), so
+    # the whole hostname can flow to the service.
     - matches:
         - path:
             type: PathPrefix
