@@ -15,4 +15,3 @@ resources:
   - webhook-configmap.yaml
   - webhook-secret.yaml
   - webhook-service.yaml
-  - webhook-httproute.yaml

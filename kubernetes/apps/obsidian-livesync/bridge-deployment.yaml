@@ -66,13 +66,6 @@ spec:
                 secretKeyRef:
                   name: vault-webhook-token
                   key: WEBHOOK_TOKEN
-            # Narrower token for the phone's Apple Health export: it only
-            # authorizes POST /health-metrics, never the /notes API.
-            - name: HEALTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vault-webhook-token
-                  key: HEALTH_TOKEN
           readinessProbe:
             httpGet:
               path: /healthz

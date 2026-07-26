@@ -11,141 +11,25 @@ data:
     same mount the bridge watches — inotify picks them up instantly and
     they sync to CouchDB (and every device) within seconds.
 
+    This is deliberately a bare file API and nothing more: anything
+    smarter (Apple Health ingest, indexing, dashboards) lives in the
+    health-api service, which writes through this endpoint.
+
     API (Bearer token required except /healthz):
       GET    /healthz          liveness, no auth
       GET    /notes/<path>     read a note
       PUT    /notes/<path>     create/overwrite a note (body = content)
       DELETE /notes/<path>     delete a note
-      POST   /health-metrics   upsert daily Apple Health aggregates into
-                               Health/Import/<date>.md — authed by the
-                               separate HEALTH_TOKEN (the phone only gets
-                               this narrower capability, never /notes)
     """
     import hmac
-    import json
     import os
     import posixpath
-    import re
     import urllib.parse
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
     VAULT_DIR = os.environ["VAULT_DIR"]
     TOKEN = os.environ["WEBHOOK_TOKEN"]
-    HEALTH_TOKEN = os.environ["HEALTH_TOKEN"]
     MAX_BODY = 10 * 1024 * 1024
-    IMPORT_DIR = "Health/Import"
-    DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-    KEY_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
-    NUM_RE = re.compile(r"^-?\d+(\.\d+)?$")
-
-    # Health Auto Export metric names -> our frontmatter keys.
-    HAE_METRIC_MAP = {
-        "step_count": "koraci",
-        "active_energy": "aktivne_kalorije",
-        "weight_body_mass": "kilaza",
-        "resting_heart_rate": "rhr",
-        "apple_exercise_time": "trening_min",
-        "heart_rate_variability": "hrv",
-        "sleep_analysis": "san",
-        "body_fat_percentage": "masnoca",
-        "basal_energy_burned": "bazalne_kalorije",
-        "vo2_max": "vo2max",
-        "vo2max": "vo2max",
-        "cardio_fitness": "vo2max",
-    }
-
-    def hae_entries(payload):
-        """Translate a Health Auto Export payload into our entry list."""
-        metrics = payload.get("data", {}).get("metrics")
-        if not isinstance(metrics, list):
-            return None
-        per_date = {}
-        for metric in metrics:
-            name = str(metric.get("name", ""))
-            key = HAE_METRIC_MAP.get(name)
-            if not key or not isinstance(metric.get("data"), list):
-                continue
-            units = str(metric.get("units", "")).lower()
-            if name == "sleep_analysis":
-                # Sleep date attribution differs between HAE versions —
-                # log the raw points until the mapping is confirmed.
-                print(f"hae sleep: {metric['data']!r}"[:600], flush=True)
-            for point in metric["data"]:
-                if not isinstance(point, dict):
-                    continue
-                date = str(point.get("date", ""))[:10]
-                if not DATE_RE.match(date):
-                    continue
-                if key == "san":
-                    # totalSleep is the real night total; 'asleep' is a
-                    # separate (often zero) bucket, so it comes last.
-                    value = point.get("totalSleep")
-                    if value is None:
-                        stages = [point.get(s) for s in ("core", "deep", "rem")]
-                        stages = [s for s in stages if isinstance(s, (int, float))]
-                        value = sum(stages) if stages else point.get("asleep")
-                    if value is None:
-                        value = point.get("qty")
-                else:
-                    value = point.get("qty")
-                if isinstance(value, bool) or not isinstance(value, (int, float)):
-                    continue
-                value = float(value)
-                if units in ("kj", "kilojoules"):
-                    value /= 4.184
-                value = round(value, 2)
-                if key in ("koraci", "trening_min", "rhr") or value == int(value):
-                    value = int(round(value))
-                bucket = per_date.setdefault(date, {})
-                if key == "san":
-                    # A day can hold several sleep sessions (night + naps);
-                    # keep the longest one — that's the night, matching how
-                    # Health itself reports "Time Asleep".
-                    value = max(value, bucket.get(key, 0))
-                bucket[key] = value
-        workouts = payload.get("data", {}).get("workouts")
-        if isinstance(workouts, list) and workouts:
-            # Shape not confirmed yet — keep a sample in the log.
-            print(f"hae workouts: {workouts!r}"[:600], flush=True)
-            for workout in workouts:
-                if not isinstance(workout, dict):
-                    continue
-                date = str(workout.get("start", workout.get("date", "")))[:10]
-                if not DATE_RE.match(date):
-                    continue
-                name = str(workout.get("name", "trening"))
-                part = name
-                duration = workout.get("duration")
-                if isinstance(duration, (int, float)) and duration > 0:
-                    # Heuristic until confirmed: big numbers are seconds.
-                    minutes = duration / 60 if duration > 300 else duration
-                    part += f" {int(round(minutes))}min"
-                energy = workout.get("activeEnergyBurned")
-                if isinstance(energy, dict):
-                    energy = energy.get("qty")
-                if isinstance(energy, (int, float)) and energy > 0:
-                    part += f" {int(round(energy))}kcal"
-                bucket = per_date.setdefault(date, {})
-                existing = bucket.get("treninzi")
-                bucket["treninzi"] = f"{existing}; {part}" if existing else part
-        return [{"date": d, "metrics": m} for d, m in sorted(per_date.items())]
-
-    def read_flat_frontmatter(path):
-        """Parse the flat `key: value` frontmatter of an import note."""
-        try:
-            with open(path, encoding="utf-8") as f:
-                lines = f.read().splitlines()
-        except FileNotFoundError:
-            return {}
-        if not lines or lines[0] != "---":
-            return {}
-        out = {}
-        for line in lines[1:]:
-            if line == "---":
-                break
-            key, _, value = line.partition(":")
-            out[key.strip()] = value.strip().strip('"')
-        return out
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "vault-webhook"
@@ -213,81 +97,6 @@ data:
                 f.write(body)
             os.replace(tmp, path)
             return self._reply(200, "written")
-
-        def do_POST(self):
-            if self.path != "/health-metrics":
-                return self._reply(404, "not found")
-            got = self.headers.get("Authorization", "")
-            if not hmac.compare_digest(got, f"Bearer {HEALTH_TOKEN}"):
-                return self._reply(401, "unauthorized")
-            length = int(self.headers.get("Content-Length", 0))
-            if length > MAX_BODY:
-                return self._reply(413, "too large")
-            raw = self.rfile.read(length).decode("utf-8", "replace")
-            # Shortcuts can't omit a key whose variable is empty — it sends
-            # '"kilaza":}' and breaks the JSON. Drop such valueless keys so
-            # one missing metric doesn't reject the whole payload.
-            raw = re.sub(r'"[a-z0-9_]+"\s*:\s*(?=[,}])', "", raw)
-            raw = re.sub(r"\{\s*,", "{", raw)
-            raw = re.sub(r",\s*(?=[,}])", "", raw)
-            # Locale decimal commas: Shortcuts renders 55.676 as "55,676"
-            # on hr/de phones. Between two digits a comma can only mean a
-            # decimal point here — JSON's own commas never sit digit-digit.
-            raw = re.sub(r"(\d),(\d)", r"\1.\2", raw)
-            try:
-                payload = json.loads(raw)
-            except ValueError:
-                return self._reply(400, "bad json")
-            if isinstance(payload, dict) and "data" in payload:
-                entries = hae_entries(payload)
-                if entries is None:
-                    return self._reply(400, "unrecognized payload")
-                if not entries:
-                    # Log a sample so an unexpected HAE shape can be debugged.
-                    print(f"hae: no known metrics in {raw[:300]!r}", flush=True)
-            else:
-                entries = payload if isinstance(payload, list) else [payload]
-            written = []
-            for entry in entries:
-                if not isinstance(entry, dict):
-                    return self._reply(400, "bad entry")
-                date = str(entry.get("date", ""))
-                metrics = entry.get("metrics")
-                if not DATE_RE.match(date) or not isinstance(metrics, dict):
-                    return self._reply(400, "bad entry")
-                clean = {}
-                for key, value in metrics.items():
-                    if not KEY_RE.match(str(key)):
-                        return self._reply(400, f"bad key: {key}")
-                    if isinstance(value, bool) or not isinstance(
-                        value, (int, float, str)
-                    ):
-                        return self._reply(400, f"bad value: {key}")
-                    value = str(value).replace("\n", " ").strip()[:200]
-                    if value:  # empty string = metric absent today, skip
-                        clean[key] = value
-                if not clean:
-                    continue
-                path = os.path.join(VAULT_DIR, IMPORT_DIR, f"{date}.md")
-                # Merge into any existing import for the date, so partial
-                # sends (e.g. sleep at 09:00, steps re-sent later) add up.
-                merged = read_flat_frontmatter(path)
-                merged.pop("spojeno", None)
-                merged.update(clean)
-                lines = ["---"]
-                for key, value in merged.items():
-                    if NUM_RE.match(value):
-                        lines.append(f"{key}: {value}")
-                    else:
-                        lines.append(f'{key}: "{value}"')
-                lines += ["spojeno: ne", "---", ""]
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                tmp = os.path.join(os.path.dirname(path), f".{date}.md.tmp")
-                with open(tmp, "w", encoding="utf-8") as f:
-                    f.write("\n".join(lines))
-                os.replace(tmp, path)
-                written.append(date)
-            return self._reply(200, "imported: " + ", ".join(written))
 
         def do_DELETE(self):
             if not self._authed():

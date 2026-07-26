@@ -16,3 +16,4 @@ spec:
       name: sops-age
   dependsOn:
     - name: longhorn
+    - name: gateway
