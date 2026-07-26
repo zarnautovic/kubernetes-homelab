@@ -68,6 +68,10 @@ spec:
             # (reads stay on /vault) — see the vault-webhook skill.
             - name: VAULT_WEBHOOK_URL
               value: http://vault-webhook.obsidian-livesync.svc.cluster.local:8080
+            # Pre-computed health aggregates (weekly averages, TDEE) so
+            # analyses don't re-read every daily note; token in hermes-env.
+            - name: HEALTH_API_URL
+              value: http://health-api.health-api.svc.cluster.local:8080
           ports:
             - name: api
               containerPort: 8642
