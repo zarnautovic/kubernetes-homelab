@@ -28,7 +28,7 @@ spec:
       containers:
         - name: health-api
           # Source: https://github.com/zarnautovic/health-api
-          image: ghcr.io/zarnautovic/health-api:1dce6f3
+          image: ghcr.io/zarnautovic/health-api:40e1a78
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
