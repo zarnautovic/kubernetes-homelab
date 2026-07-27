@@ -1,0 +1,117 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-webhook-script
+  namespace: obsidian-livesync
+data:
+  webhook.py: |
+    """Vault write webhook.
+
+    Runs as a sidecar in the livesync-bridge pod so writes land on the
+    same mount the bridge watches — inotify picks them up instantly and
+    they sync to CouchDB (and every device) within seconds.
+
+    This is deliberately a bare file API and nothing more: anything
+    smarter (Apple Health ingest, indexing, dashboards) lives in the
+    health-api service, which writes through this endpoint.
+
+    API (Bearer token required except /healthz):
+      GET    /healthz          liveness, no auth
+      GET    /notes/<path>     read a note
+      PUT    /notes/<path>     create/overwrite a note (body = content)
+      DELETE /notes/<path>     delete a note
+    """
+    import hmac
+    import os
+    import posixpath
+    import urllib.parse
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    VAULT_DIR = os.environ["VAULT_DIR"]
+    TOKEN = os.environ["WEBHOOK_TOKEN"]
+    MAX_BODY = 10 * 1024 * 1024
+
+    class Handler(BaseHTTPRequestHandler):
+        server_version = "vault-webhook"
+
+        def _reply(self, code, text):
+            body = (text.rstrip("\n") + "\n").encode()
+            self.send_response(code)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _authed(self):
+            got = self.headers.get("Authorization", "")
+            want = f"Bearer {TOKEN}"
+            return hmac.compare_digest(got, want)
+
+        def _note_path(self):
+            raw = urllib.parse.unquote(self.path)
+            if not raw.startswith("/notes/"):
+                return None
+            rel = posixpath.normpath(raw[len("/notes/"):])
+            parts = rel.split("/")
+            if rel.startswith(("/", ".")) or any(
+                p in ("", ".", "..") or p.startswith(".") for p in parts
+            ):
+                return None
+            return os.path.join(VAULT_DIR, rel)
+
+        def do_GET(self):
+            if self.path == "/healthz":
+                return self._reply(200, "ok")
+            if not self._authed():
+                return self._reply(401, "unauthorized")
+            path = self._note_path()
+            if path is None:
+                return self._reply(400, "bad path")
+            try:
+                with open(path, "rb") as f:
+                    data = f.read()
+            except FileNotFoundError:
+                return self._reply(404, "not found")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/markdown; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_PUT(self):
+            if not self._authed():
+                return self._reply(401, "unauthorized")
+            path = self._note_path()
+            if path is None:
+                return self._reply(400, "bad path")
+            length = int(self.headers.get("Content-Length", 0))
+            if length > MAX_BODY:
+                return self._reply(413, "too large")
+            body = self.rfile.read(length)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            # Atomic write: the bridge must never see a half-written note.
+            tmp = os.path.join(
+                os.path.dirname(path), f".{os.path.basename(path)}.tmp"
+            )
+            with open(tmp, "wb") as f:
+                f.write(body)
+            os.replace(tmp, path)
+            return self._reply(200, "written")
+
+        def do_DELETE(self):
+            if not self._authed():
+                return self._reply(401, "unauthorized")
+            path = self._note_path()
+            if path is None:
+                return self._reply(400, "bad path")
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                return self._reply(404, "not found")
+            return self._reply(200, "deleted")
+
+        def log_message(self, fmt, *args):
+            print(f"{self.address_string()} {fmt % args}", flush=True)
+
+    if __name__ == "__main__":
+        ThreadingHTTPServer(("0.0.0.0", 8080), Handler).serve_forever()
