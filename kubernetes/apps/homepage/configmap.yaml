@@ -21,6 +21,8 @@ data:
         icon: mdi-play-circle
         style: row
         columns: 4
+      Health:
+        icon: mdi-heart-pulse
       AI:
         icon: mdi-robot
     providers:
@@ -108,6 +110,34 @@ data:
               type: bazarr
               url: http://bazarr.bazarr.svc.cluster.local:6767
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
+    - Health:
+        - Health Dashboard:
+            icon: mdi-heart-pulse
+            href: "https://health.zlaya.tech"
+            description: kilaža, unos, san, trening
+            widget:
+              type: customapi
+              url: http://health-api.health-api.svc.cluster.local:8080/stats?window=7d
+              refreshInterval: 300000
+              mappings:
+                - field:
+                    current: kilaza_last
+                  label: Kilaža
+                  format: float
+                  suffix: " kg"
+                - field:
+                    kilaza_trend: kg_per_week
+                  label: kg/tjedan
+                  format: float
+                - field:
+                    tdee: measured
+                  label: TDEE
+                  format: number
+                - field:
+                    targets: kilaza_milestone
+                  label: Cilj
+                  format: number
+                  suffix: " kg"
     - AI:
         - Hermes:
             icon: mdi-robot
