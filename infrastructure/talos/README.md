@@ -48,8 +48,7 @@ if the extension set itself changes.
    talosctl apply-config --insecure -n <new-node-ip> \
      -f controlplane.yaml \
      --config-patch @patch-all.yaml \
-     --config-patch @vip-patch.yaml \
-     --config-patch @iscsid-extension-config.yaml
+     --config-patch @vip-patch.yaml
    ```
 
 4. The node joins etcd and the cluster (all three nodes are control
