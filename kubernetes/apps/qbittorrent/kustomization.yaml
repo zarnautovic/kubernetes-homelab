@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - secret.yaml
+  - configmap-init.yaml
   - pv.yaml
   - pvc.yaml
   - deployment.yaml

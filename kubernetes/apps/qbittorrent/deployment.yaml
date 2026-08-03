@@ -97,6 +97,9 @@ spec:
               mountPath: /config
             - name: downloads
               mountPath: /downloads
+            - name: init-scripts
+              mountPath: /custom-cont-init.d
+              readOnly: true
       volumes:
         - name: tun-device
           hostPath:
@@ -108,3 +111,7 @@ spec:
         - name: downloads
           persistentVolumeClaim:
             claimName: qbittorrent-downloads
+        - name: init-scripts
+          configMap:
+            name: qbittorrent-init
+            defaultMode: 0755

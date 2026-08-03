@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qbittorrent-init
+  namespace: qbittorrent
+data:
+  # LSIO images run every script in /custom-cont-init.d BEFORE starting the
+  # app, so at this point no qbittorrent-nox can be running and any lockfile
+  # is by definition stale. qBittorrent's own stale-lock detection compares
+  # the stored PID against live processes, which is meaningless across
+  # container restarts (fresh PID namespace -> the old PID often "exists" as
+  # some unrelated s6/busybox process) and then it exits in a loop thinking
+  # another instance is running. Seen 2026-08-03 after a node reboot and
+  # 12.-24.07. (hundreds of qbittorrent.log.bak rotations).
+  # Safe here because strategy=Recreate + RWO config PVC guarantee no second
+  # live instance can hold the lock while this runs.
+  10-remove-stale-lock.sh: |
+    #!/bin/bash
+    if [[ -f /config/qBittorrent/lockfile ]]; then
+        echo "[remove-stale-lock] removing stale /config/qBittorrent/lockfile"
+        rm -f /config/qBittorrent/lockfile
+    fi
