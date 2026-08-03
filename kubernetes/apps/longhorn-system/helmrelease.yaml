@@ -34,6 +34,14 @@ spec:
       # Live-upgrade volume engines to the default (chart) engine image, 1 per node at a
       # time, so engines never drift behind the Longhorn version on future upgrades.
       concurrentAutomaticEngineUpgradePerNodeLimit: 1
+      # Nightly backups saturate the shared hypervisor disk and starved etcd
+      # (leader-election restart storms every night at 02:00). One backup at a
+      # time keeps the I/O burst survivable.
+      backupConcurrentLimit: 1
+      # Max allowed (range 8-30). During backup I/O storms replicas need more
+      # than the default 8s to respond, otherwise the engine faults them and
+      # the volume throws I/O errors -> ext4 journal aborts in the guest.
+      engineReplicaTimeout: 30
     persistence:
       defaultClass: true
       defaultClassReplicaCount: 3

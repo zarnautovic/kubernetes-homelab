@@ -4,12 +4,16 @@ metadata:
   name: backup-daily
   namespace: longhorn-system
 spec:
-  cron: "0 2 * * *"
+  # Mon-Sat only: on Sundays the weekly backup replaces the daily one so the
+  # two jobs never run in the same night (2026-08-02 they overlapped and the
+  # combined I/O load starved etcd + aborted ext4 journals on app volumes).
+  cron: "0 2 * * 1-6"
   task: backup
   groups:
     - default
   retain: 7
-  concurrency: 2
+  # One volume at a time - halves peak I/O on the shared hypervisor disk.
+  concurrency: 1
   labels:
     cadence: daily
 ---
@@ -19,12 +23,13 @@ metadata:
   name: backup-weekly
   namespace: longhorn-system
 spec:
-  cron: "0 3 * * 0"
+  # Sundays 02:00, replacing (not stacking on) the daily job.
+  cron: "0 2 * * 0"
   task: backup
   groups:
     - default
   retain: 8
-  concurrency: 2
+  concurrency: 1
   labels:
     cadence: weekly
 ---
@@ -34,11 +39,13 @@ metadata:
   name: backup-monthly
   namespace: longhorn-system
 spec:
-  cron: "0 4 1 * *"
+  # 05:00 keeps a >2h gap from the nightly window even on the 1st of a month
+  # that falls on a Sunday (weekly finishes well before 05:00).
+  cron: "0 5 1 * *"
   task: backup
   groups:
     - default
   retain: 6
-  concurrency: 2
+  concurrency: 1
   labels:
     cadence: monthly
