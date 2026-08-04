@@ -5,7 +5,7 @@
 # 2026-08-04 etcd election storm was the two backup jobs colliding.
 #
 # Volume -> group mapping lives as labels on the Longhorn Volume CRs:
-#   recurring-job-group.longhorn.io/<a|b|c>: enabled
+#   recurring-job-group.longhorn.io/<nightly-a|b|c>: enabled
 # Volumes without any recurring-job label fall into the "default" group,
 # which is swept by the group-c jobs so new PVCs are always backed up.
 apiVersion: longhorn.io/v1beta2
@@ -19,7 +19,7 @@ spec:
   cron: "0 4 * * 1-6"
   task: backup
   groups:
-    - a
+    - nightly-a
   retain: 7
   concurrency: 1
   labels:
@@ -34,7 +34,7 @@ spec:
   cron: "0 5 * * 1-6"
   task: backup
   groups:
-    - b
+    - nightly-b
   retain: 7
   concurrency: 1
   labels:
@@ -49,7 +49,7 @@ spec:
   cron: "0 6 * * 1-6"
   task: backup
   groups:
-    - c
+    - nightly-c
     - default
   retain: 7
   concurrency: 1
@@ -66,7 +66,7 @@ spec:
   cron: "0 4 * * 0"
   task: backup
   groups:
-    - a
+    - nightly-a
   retain: 8
   concurrency: 1
   labels:
@@ -81,7 +81,7 @@ spec:
   cron: "0 5 * * 0"
   task: backup
   groups:
-    - b
+    - nightly-b
   retain: 8
   concurrency: 1
   labels:
@@ -96,7 +96,7 @@ spec:
   cron: "0 6 * * 0"
   task: backup
   groups:
-    - c
+    - nightly-c
     - default
   retain: 8
   concurrency: 1
@@ -114,9 +114,9 @@ spec:
   cron: "0 8 1 * *"
   task: backup
   groups:
-    - a
-    - b
-    - c
+    - nightly-a
+    - nightly-b
+    - nightly-c
     - default
   retain: 6
   concurrency: 1
