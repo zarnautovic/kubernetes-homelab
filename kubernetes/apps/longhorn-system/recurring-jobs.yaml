@@ -1,18 +1,26 @@
+# Backups are split into three staggered groups (a/b/c, balanced by actual
+# volume size) so snapshot purge/coalescing never runs for all volumes at
+# once. All slots start at 04:00 UTC or later because Proxmox vzdump backs up
+# the node VMs at 02:00 UTC (04:00 local) from the same ZFS pool - the
+# 2026-08-04 etcd election storm was the two backup jobs colliding.
+#
+# Volume -> group mapping lives as labels on the Longhorn Volume CRs:
+#   recurring-job-group.longhorn.io/<a|b|c>: enabled
+# Volumes without any recurring-job label fall into the "default" group,
+# which is swept by the group-c jobs so new PVCs are always backed up.
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:
-  name: backup-daily
+  name: backup-daily-a
   namespace: longhorn-system
 spec:
   # Mon-Sat only: on Sundays the weekly backup replaces the daily one so the
-  # two jobs never run in the same night (2026-08-02 they overlapped and the
-  # combined I/O load starved etcd + aborted ext4 journals on app volumes).
-  cron: "0 2 * * 1-6"
+  # two jobs never run in the same night.
+  cron: "0 4 * * 1-6"
   task: backup
   groups:
-    - default
+    - a
   retain: 7
-  # One volume at a time - halves peak I/O on the shared hypervisor disk.
   concurrency: 1
   labels:
     cadence: daily
@@ -20,13 +28,75 @@ spec:
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:
-  name: backup-weekly
+  name: backup-daily-b
   namespace: longhorn-system
 spec:
-  # Sundays 02:00, replacing (not stacking on) the daily job.
-  cron: "0 2 * * 0"
+  cron: "0 5 * * 1-6"
   task: backup
   groups:
+    - b
+  retain: 7
+  concurrency: 1
+  labels:
+    cadence: daily
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-daily-c
+  namespace: longhorn-system
+spec:
+  cron: "0 6 * * 1-6"
+  task: backup
+  groups:
+    - c
+    - default
+  retain: 7
+  concurrency: 1
+  labels:
+    cadence: daily
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-weekly-a
+  namespace: longhorn-system
+spec:
+  # Sundays, replacing (not stacking on) the daily jobs.
+  cron: "0 4 * * 0"
+  task: backup
+  groups:
+    - a
+  retain: 8
+  concurrency: 1
+  labels:
+    cadence: weekly
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-weekly-b
+  namespace: longhorn-system
+spec:
+  cron: "0 5 * * 0"
+  task: backup
+  groups:
+    - b
+  retain: 8
+  concurrency: 1
+  labels:
+    cadence: weekly
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-weekly-c
+  namespace: longhorn-system
+spec:
+  cron: "0 6 * * 0"
+  task: backup
+  groups:
+    - c
     - default
   retain: 8
   concurrency: 1
@@ -39,11 +109,14 @@ metadata:
   name: backup-monthly
   namespace: longhorn-system
 spec:
-  # 05:00 keeps a >2h gap from the nightly window even on the 1st of a month
-  # that falls on a Sunday (weekly finishes well before 05:00).
-  cron: "0 5 1 * *"
+  # 08:00 on the 1st keeps a >1h gap after the last daily/weekly slot (06:00
+  # + ~30-60min) even when the 1st falls on any day of the week.
+  cron: "0 8 1 * *"
   task: backup
   groups:
+    - a
+    - b
+    - c
     - default
   retain: 6
   concurrency: 1
