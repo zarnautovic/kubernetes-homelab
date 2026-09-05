@@ -105,7 +105,8 @@ Three distinct tiers:
 - **Longhorn v1.12.1** — replicated (×3) block storage for app config/database PVCs. Data lives on each node's dedicated disk at `/var/mnt/longhorn` (`/dev/sdb`). Volume engines auto-upgrade to the chart's default image (`concurrentAutomaticEngineUpgradePerNodeLimit: 1`), so they never drift behind the Longhorn version.
 - **Longhorn backups** — daily snapshots pushed **off-cluster** to TrueNAS NFS.
   - Target: `nfs://192.168.1.101:/mnt/backup-pool/backup` (NFSv3, nolock)
-  - Layered recurring jobs (group `default`, all volumes): `backup-daily` 02:00 retain 7, `backup-weekly` Sun 03:00 retain 8, `backup-monthly` 1st 04:00 retain 6 — restore points from yesterday back to ~6 months
+  - Volumes are split into three staggered groups (`nightly-a`/`b`/`c`, balanced by size, assigned via `recurring-job-group.longhorn.io/<group>` labels on the Longhorn Volume CRs) so snapshot purge/coalescing never hits every volume at once. Unlabelled volumes fall into `default`, which the group-c jobs also sweep, so new PVCs are always backed up.
+  - Layered recurring jobs (all times UTC, deliberately after the 02:00 UTC Proxmox vzdump window on the same ZFS pool): `backup-daily-{a,b,c}` Mon–Sat 04:00/05:00/06:00 retain 7, `backup-weekly-{a,b,c}` Sun 04:00/05:00/06:00 retain 8, `backup-monthly` 1st 08:00 retain 6 — restore points from yesterday back to ~6 months. `backupConcurrentLimit: 1` keeps the I/O burst survivable.
 - **TrueNAS NFS (media)** — bulk media + downloads, mounted by the media stack.
   - `nfs://192.168.1.101:/mnt/main-pool/media`
   - PVs use `storageClassName: ""`, RWX, Retain policy, pre-bound via `claimRef`
