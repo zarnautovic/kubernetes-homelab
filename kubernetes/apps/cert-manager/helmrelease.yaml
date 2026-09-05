@@ -8,9 +8,9 @@ spec:
   chart:
     spec:
       chart: cert-manager
-      # Pinned to the 1.20 minor (latest; supports K8s 1.35). Bump the minor
+      # Pinned to the 1.21 minor (latest; supports K8s 1.33-1.36). Bump the minor
       # deliberately after checking release notes + K8s compatibility.
-      version: "v1.20.x"
+      version: "v1.21.x"
       sourceRef:
         kind: HelmRepository
         name: jetstack
