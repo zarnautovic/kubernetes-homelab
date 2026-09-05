@@ -8,10 +8,10 @@ GitOps repository for my homelab Kubernetes cluster.
 |---|---|
 | OS | Talos Linux v1.13.3 |
 | Kubernetes | v1.35.5 |
-| CNI | Cilium v1.19.4 (kube-proxy replacement, native routing, Gateway API, L2 announcements) |
-| GitOps | Flux CD v2.8 |
+| CNI | Cilium v1.20.1 (kube-proxy replacement, native routing, Gateway API, L2 announcements) |
+| GitOps | Flux CD v2.9 |
 | Secrets | SOPS + age |
-| Storage | Longhorn v1.12.0 + TrueNAS NFS |
+| Storage | Longhorn v1.12.1 + TrueNAS NFS |
 
 ## Nodes
 
@@ -34,7 +34,7 @@ Traffic flow for external access:
 Internet → Router (443) → Ubuntu VM (Traefik) → Kubernetes LB (192.168.1.240) → Cilium Gateway API
 ```
 
-- Gateway API v1.2.1 with Cilium GatewayClass
+- Gateway API v1.6.1 with Cilium GatewayClass
 - Gateway `main` in `network` namespace — listeners on HTTP :80 and HTTPS :443
 - HTTP → HTTPS redirect at gateway level
 - Cilium is bootstrapped via Helm at install (CNI chicken-and-egg) and managed day-2 by a Flux HelmRelease (`kube-system/cilium`)
@@ -102,7 +102,7 @@ kubernetes/
 
 Three distinct tiers:
 
-- **Longhorn v1.12.0** — replicated (×3) block storage for app config/database PVCs. Data lives on each node's dedicated disk at `/var/mnt/longhorn` (`/dev/sdb`). Volume engines auto-upgrade to the chart's default image (`concurrentAutomaticEngineUpgradePerNodeLimit: 1`), so they never drift behind the Longhorn version.
+- **Longhorn v1.12.1** — replicated (×3) block storage for app config/database PVCs. Data lives on each node's dedicated disk at `/var/mnt/longhorn` (`/dev/sdb`). Volume engines auto-upgrade to the chart's default image (`concurrentAutomaticEngineUpgradePerNodeLimit: 1`), so they never drift behind the Longhorn version.
 - **Longhorn backups** — daily snapshots pushed **off-cluster** to TrueNAS NFS.
   - Target: `nfs://192.168.1.101:/mnt/backup-pool/backup` (NFSv3, nolock)
   - Layered recurring jobs (group `default`, all volumes): `backup-daily` 02:00 retain 7, `backup-weekly` Sun 03:00 retain 8, `backup-monthly` 1st 04:00 retain 6 — restore points from yesterday back to ~6 months
