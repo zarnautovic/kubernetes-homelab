@@ -21,7 +21,7 @@ spec:
         # /app/dat must stay writable for runtime state, so the read-only
         # secret is copied in rather than mounted directly.
         - name: copy-config
-          image: busybox:1.37
+          image: busybox:1.38
           command:
             - sh
             - -c

@@ -26,7 +26,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: seerr
-          image: ghcr.io/seerr-team/seerr:v3.3.0
+          image: ghcr.io/seerr-team/seerr:v3.4.1
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

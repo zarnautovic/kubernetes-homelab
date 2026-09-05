@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: tautulli
-          image: ghcr.io/tautulli/tautulli:v2.17.2
+          image: ghcr.io/tautulli/tautulli:v2.18.1
           readinessProbe:
             tcpSocket:
               port: 8181

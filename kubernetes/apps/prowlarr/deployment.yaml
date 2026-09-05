@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: prowlarr
-          image: ghcr.io/linuxserver/prowlarr:2.4.0.5397-ls150
+          image: ghcr.io/linuxserver/prowlarr:2.5.2.5491-ls158
           readinessProbe:
             tcpSocket:
               port: 9696

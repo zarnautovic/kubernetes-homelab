@@ -19,7 +19,7 @@ spec:
     spec:
       initContainers:
         - name: restore-config
-          image: alpine:3.19
+          image: alpine:3.22
           command:
             - sh
             - -c
@@ -40,7 +40,7 @@ spec:
               subPath: plex-backup
       containers:
         - name: plex
-          image: plexinc/pms-docker:1.43.2.10687-563d026ea
+          image: plexinc/pms-docker:1.43.3.10896-cb3ebc72d
           readinessProbe:
             tcpSocket:
               port: 32400
