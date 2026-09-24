@@ -28,7 +28,11 @@ spec:
         fsGroup: 10000
       containers:
         - name: hermes
-          image: nousresearch/hermes-agent:v2026.8.31
+          # Pinned by digest to the 2026-09-24 main build (upstream commit
+          # 58c896ea): GPT-6 Sol/Luna model metadata landed on main on
+          # 2026-09-22/23 and is not in any tagged release yet (v2026.9.21
+          # predates it). Move back to a release tag once one ships with it.
+          image: nousresearch/hermes-agent:latest@sha256:01d12091a6c933ab4420808ba2026cc622a67cb77aa74ef6c4e8a67f201691a5
           args: ["gateway", "run"]
           # No TCP probes: the OpenAI-compatible API (8642) only listens
           # when explicitly enabled, and the image supervises the gateway
