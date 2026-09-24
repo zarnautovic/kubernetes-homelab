@@ -9,7 +9,7 @@ backed up on the management VM (`zlaya@192.168.1.199`).
 
 | | |
 |---|---|
-| Talos | v1.13.3 (one Proxmox VM per HP EliteDesk G4 host) |
+| Talos | v1.14.1 (one Proxmox VM per HP EliteDesk G4 host) |
 | Nodes | talos-icw-nam (192.168.1.143), talos-pv0-ntu (192.168.1.135), talos-node-hades (192.168.1.136) |
 | API VIP | 192.168.1.100 (see `vip-patch.yaml`, interface ens18) |
 | Longhorn disk | second disk `/dev/sdb`, mounted at `/var/mnt/longhorn` (see `patch-all.yaml`) |
@@ -18,11 +18,11 @@ backed up on the management VM (`zlaya@192.168.1.199`).
 
 ## System extensions and factory image
 
-All three nodes run the same factory schematic (verified 2026-07-12 via
+All three nodes run the same factory schematic (verified 2026-09-24 via
 `talosctl get extensions`):
 
 ```
-factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.13.3
+factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.14.1
 ```
 
 Extensions included in the schematic:
