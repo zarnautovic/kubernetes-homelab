@@ -28,6 +28,11 @@ spec:
               readOnly: true
             - name: kubeletsockets
               mountPath: /var/lib/kubelet/device-plugins
+            # CDI spec output; without it the plugin logs
+            # "CDI spec write failed: mkdir /var/run/cdi: read-only file system"
+            # (rootfs is read-only). Matches the upstream base DaemonSet.
+            - name: cdipath
+              mountPath: /var/run/cdi
       volumes:
         - name: devfs
           hostPath:
@@ -38,3 +43,7 @@ spec:
         - name: kubeletsockets
           hostPath:
             path: /var/lib/kubelet/device-plugins
+        - name: cdipath
+          hostPath:
+            path: /var/run/cdi
+            type: DirectoryOrCreate
