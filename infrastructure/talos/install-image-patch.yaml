@@ -1,0 +1,10 @@
+# install-image-patch.yaml
+# Keeps machine.install.image in sync with the running Talos version after a
+# `talosctl upgrade`. The upgrade itself does not rewrite this field, and a
+# later reinstall or `talosctl upgrade` without --image would fall back to it.
+# Strategic-merge patch (the live config is multi-document, so JSON6902
+# patches are rejected). Apply without reboot:
+#   talosctl -n <node-ip> patch mc -p @infrastructure/talos/install-image-patch.yaml
+machine:
+  install:
+    image: factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.14.1
