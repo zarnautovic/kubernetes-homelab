@@ -1,0 +1,20 @@
+# Direct LAN endpoint for the mobile apps (Immich "local network URL"):
+# uploads at home skip Cloudflare's 100 MB request-body limit.
+# The chart hardcodes its own server Service to ClusterIP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-lan
+  namespace: immich
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 192.168.1.242
+  selector:
+    app.kubernetes.io/instance: immich
+    app.kubernetes.io/name: server
+    app.kubernetes.io/controller: main
+  ports:
+    - name: http
+      port: 2283
+      targetPort: 2283
+      protocol: TCP

@@ -63,7 +63,8 @@ kubernetes/
     ├── tautulli/       # Plex analytics
     ├── intel-gpu-plugin/ # iGPU device plugin
     ├── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
-    └── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
+    ├── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
+    └── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.
@@ -82,6 +83,7 @@ kubernetes/
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
 | LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
 | Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only |
+| Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
 
 ### Media Stack
 
@@ -110,6 +112,9 @@ Three distinct tiers:
 - **TrueNAS NFS (media)** — bulk media + downloads, mounted by the media stack.
   - `nfs://192.168.1.101:/mnt/main-pool/media`
   - PVs use `storageClassName: ""`, RWX, Retain policy, pre-bound via `claimRef`
+- **TrueNAS NFS (photos)** — Immich library (originals, thumbnails, encoded video, Immich DB dumps), runs as UID/GID 3001.
+  - `nfs://192.168.1.101:/mnt/main-pool/photos` (share limited to the three node IPs, 500 GiB quota)
+  - ZFS snapshots hourly (48 h) / daily (30 d) / monthly (12 mo), replicated nightly to `backup-pool/photos`
 - **TrueNAS NFS (vault mirror)** — plain-file mirror of the Obsidian vault, written by livesync-bridge and mounted read-mostly by Home Assistant and automation.
   - `nfs://192.168.1.101:/mnt/main-pool/vault-mirror`
 

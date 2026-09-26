@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: immich-library-nfs
+spec:
+  capacity:
+    storage: 500Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  nfs:
+    server: 192.168.1.101
+    # ZFS dataset main-pool/photos (owner 3001:3001, quota 500 GiB, hourly/daily/
+    # monthly snapshots, nightly replication to backup-pool/photos)
+    path: /mnt/main-pool/photos
+  claimRef:
+    name: immich-library
+    namespace: immich

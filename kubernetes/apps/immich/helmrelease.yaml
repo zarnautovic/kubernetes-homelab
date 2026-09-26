@@ -1,0 +1,111 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: immich
+  namespace: immich
+spec:
+  interval: 30m
+  chartRef:
+    kind: OCIRepository
+    name: immich
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    # Shared by server + machine-learning (must be the same version).
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              tag: v3.2.2
+            env:
+              TZ: Europe/Zagreb
+
+    immich:
+      persistence:
+        library:
+          # NFS: TrueNAS main-pool/photos, mounted at /data
+          existingClaim: immich-library
+
+    valkey:
+      enabled: true
+
+    server:
+      controllers:
+        main:
+          pod:
+            # Library dataset is owned by 3001:3001 on TrueNAS (NFS, no maproot)
+            securityContext:
+              runAsUser: 3001
+              runAsGroup: 3001
+              runAsNonRoot: true
+              fsGroup: 3001
+              fsGroupChangePolicy: OnRootMismatch
+          containers:
+            main:
+              env:
+                DB_HOSTNAME: immich-postgres
+                DB_USERNAME:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-db
+                      key: DB_USERNAME
+                DB_PASSWORD:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-db
+                      key: DB_PASSWORD
+                DB_DATABASE_NAME:
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-db
+                      key: DB_DATABASE_NAME
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  memory: 3Gi
+
+    machine-learning:
+      controllers:
+        main:
+          pod:
+            securityContext:
+              runAsUser: 3001
+              runAsGroup: 3001
+              runAsNonRoot: true
+              fsGroup: 3001
+              fsGroupChangePolicy: OnRootMismatch
+            # Least-loaded node; ML peaks at 2-4 GB during the first import.
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: In
+                          values:
+                            - talos-icw-nam
+          containers:
+            main:
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 512Mi
+                limits:
+                  memory: 4Gi
+      persistence:
+        # Keep downloaded models across restarts (~1-2 GB)
+        cache:
+          enabled: true
+          type: persistentVolumeClaim
+          storageClass: longhorn
+          accessMode: ReadWriteOnce
+          size: 10Gi
