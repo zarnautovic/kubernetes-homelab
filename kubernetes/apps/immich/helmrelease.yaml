@@ -46,6 +46,17 @@ spec:
               runAsNonRoot: true
               fsGroup: 3001
               fsGroupChangePolicy: OnRootMismatch
+            # hades was at 93 % CPU with server + postgres + valkey on it
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: In
+                          values:
+                            - talos-pv0-ntu
           containers:
             main:
               env:
@@ -65,12 +76,14 @@ spec:
                     secretKeyRef:
                       name: immich-db
                       key: DB_DATABASE_NAME
+              # Thumbnailing + ffmpeg transcoding run inside the server process;
+              # 3Gi got OOMKilled while processing the ~6.3k-asset Takeout import.
               resources:
                 requests:
-                  cpu: 100m
-                  memory: 512Mi
+                  cpu: 250m
+                  memory: 1Gi
                 limits:
-                  memory: 3Gi
+                  memory: 6Gi
 
     machine-learning:
       controllers:
