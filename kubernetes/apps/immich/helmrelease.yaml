@@ -77,13 +77,13 @@ spec:
                       name: immich-db
                       key: DB_DATABASE_NAME
               # Thumbnailing + ffmpeg transcoding run inside the server process;
-              # 3Gi got OOMKilled while processing the ~6.3k-asset Takeout import.
+              # 3Gi and 6Gi both got OOMKilled while processing ~11.6k imported assets.
               resources:
                 requests:
                   cpu: 250m
                   memory: 1Gi
                 limits:
-                  memory: 6Gi
+                  memory: 8Gi
 
     machine-learning:
       controllers:
