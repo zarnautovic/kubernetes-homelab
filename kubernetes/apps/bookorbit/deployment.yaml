@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookorbit
+  namespace: bookorbit
+spec:
+  replicas: 1
+  # bookorbit-data is RWO Longhorn
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bookorbit
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bookorbit
+    spec:
+      # Runs directly as the NAS owner of main-pool/books (3002) instead of root + su-exec.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 3002
+        runAsGroup: 3002
+        fsGroup: 3002
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: bookorbit
+          image: ghcr.io/bookorbit/bookorbit:3.1.0
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            - name: APP_URL
+              value: https://books.zlaya.tech
+            - name: TZ
+              value: Europe/Zagreb
+            - name: POSTGRES_HOST
+              value: bookorbit-postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: BOOK_DOCK_PATH
+              value: /books/dock
+            - name: LIBRARY_BROWSE_ROOT
+              value: /books
+            - name: NODE_MAX_OLD_SPACE_SIZE
+              value: auto
+          envFrom:
+            - secretRef:
+                name: bookorbit
+          ports:
+            - name: http
+              containerPort: 3000
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: books
+              mountPath: /books
+            - name: data
+              mountPath: /data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: books
+          persistentVolumeClaim:
+            claimName: bookorbit-books
+        - name: data
+          persistentVolumeClaim:
+            claimName: bookorbit-data
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookorbit
+  namespace: bookorbit
+spec:
+  selector:
+    app.kubernetes.io/name: bookorbit
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http

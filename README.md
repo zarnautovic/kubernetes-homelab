@@ -64,7 +64,8 @@ kubernetes/
     ├── intel-gpu-plugin/ # iGPU device plugin
     ├── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
     ├── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
-    └── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
+    ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
+    └── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.
@@ -84,6 +85,7 @@ kubernetes/
 | LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
 | Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only |
 | Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
+| BookOrbit | bookorbit | books.example.com | Ebook library (Calibre library on TrueNAS NFS `main-pool/books`), web reader, OPDS, KOReader/Kobo sync; own Postgres/pgvector StatefulSet on Longhorn; login via Authentik OIDC |
 
 ### Media Stack
 
