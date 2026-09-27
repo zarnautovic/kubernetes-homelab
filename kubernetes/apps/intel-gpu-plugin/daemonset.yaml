@@ -17,6 +17,9 @@ spec:
         - name: intel-gpu-plugin
           image: intel/intel-gpu-plugin:0.37.0
           imagePullPolicy: IfNotPresent
+          # Let two pods share one iGPU per node (Plex + Immich both on talos-pv0-ntu).
+          args:
+            - -shared-dev-num=2
           securityContext:
             readOnlyRootFilesystem: true
           volumeMounts:

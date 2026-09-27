@@ -84,6 +84,8 @@ spec:
                   memory: 1Gi
                 limits:
                   memory: 8Gi
+                  # UHD 630 for QSV video transcoding (shared with Plex, see intel-gpu-plugin)
+                  gpu.intel.com/i915: 1
 
     machine-learning:
       controllers:
