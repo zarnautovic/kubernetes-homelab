@@ -3,12 +3,21 @@ kind: HTTPRoute
 metadata:
   name: couchdb
   namespace: obsidian-livesync
+  annotations:
+    # javno kroz Cloudflare Tunnel: Gateway "public" nosi target (CNAME na tunel), ovdje proxied
+    external-dns.kubernetes.io/cloudflare-proxied: "true"
 spec:
   parentRefs:
+    # stara domena, samo zlaya.tech listener (dok traje selidba)
     - name: main
+      namespace: network
+      sectionName: https
+    # nova domena, javno kroz tunel; CouchDB ima vlastitu autentikaciju (bez Authentika)
+    - name: public
       namespace: network
   hostnames:
     - "obsidian-sync.zlaya.tech"
+    - "obsidian-sync.zlayahome.ovh"
   rules:
     - backendRefs:
         - name: couchdb
