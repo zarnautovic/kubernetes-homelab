@@ -3,12 +3,17 @@ kind: HTTPRoute
 metadata:
   name: authentik
   namespace: authentik
+  annotations:
+    # javno kroz Cloudflare Tunnel (external-dns radi proxied CNAME na tunel)
+    external-dns.alpha.kubernetes.io/target: b83ff200-e567-4121-ac90-c1e80bc1bbcf.cfargotunnel.com
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   parentRefs:
     - name: main
       namespace: network
   hostnames:
     - "authentik.zlaya.tech"
+    - "authentik.zlayahome.ovh"
   rules:
     - backendRefs:
         - name: authentik-server
