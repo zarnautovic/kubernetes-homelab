@@ -15,6 +15,15 @@ spec:
       sectionName: https-ovh
   hostnames:
     - "tautulli.zlayahome.ovh"
+    - "radarr.zlayahome.ovh"
+    - "sonarr.zlayahome.ovh"
+    - "bazarr.zlayahome.ovh"
+    - "prowlarr.zlayahome.ovh"
+    - "qbittorrent.zlayahome.ovh"
+    - "autobrr.zlayahome.ovh"
+    - "longhorn.zlayahome.ovh"
+    - "home.zlayahome.ovh"
+    - "plex.zlayahome.ovh"
   rules:
     - backendRefs:
         - name: authentik-server

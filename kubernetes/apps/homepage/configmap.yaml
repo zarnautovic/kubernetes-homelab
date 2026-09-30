@@ -55,28 +55,28 @@ data:
     - Media:
         - Plex:
             icon: plex.svg
-            href: "https://plex.zlaya.tech"
+            href: "https://plex.zlayahome.ovh"
             widget:
               type: plex
               url: http://plex.plex.svc.cluster.local:32400
               key: "{{HOMEPAGE_VAR_PLEX_TOKEN}}"
         - Seerr:
             icon: jellyseerr.svg
-            href: "https://seerr.zlaya.tech"
+            href: "https://seerr.zlayahome.ovh"
             widget:
               type: jellyseerr
               url: http://seerr.seerr.svc.cluster.local:5055
               key: "{{HOMEPAGE_VAR_SEERR_KEY}}"
         - Tautulli:
             icon: tautulli.svg
-            href: "https://tautulli.zlaya.tech"
+            href: "https://tautulli.zlayahome.ovh"
             widget:
               type: tautulli
               url: http://tautulli.tautulli.svc.cluster.local:8181
               key: "{{HOMEPAGE_VAR_TAUTULLI_KEY}}"
         - qBittorrent:
             icon: qbittorrent.svg
-            href: "https://qbittorrent.zlaya.tech"
+            href: "https://qbittorrent.zlayahome.ovh"
             widget:
               type: qbittorrent
               url: http://qbittorrent.qbittorrent.svc.cluster.local:8080
@@ -84,28 +84,28 @@ data:
               password: "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}"
         - Sonarr:
             icon: sonarr.svg
-            href: "https://sonarr.zlaya.tech"
+            href: "https://sonarr.zlayahome.ovh"
             widget:
               type: sonarr
               url: http://sonarr.sonarr.svc.cluster.local:8989
               key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
         - Radarr:
             icon: radarr.svg
-            href: "https://radarr.zlaya.tech"
+            href: "https://radarr.zlayahome.ovh"
             widget:
               type: radarr
               url: http://radarr.radarr.svc.cluster.local:7878
               key: "{{HOMEPAGE_VAR_RADARR_KEY}}"
         - Prowlarr:
             icon: prowlarr.svg
-            href: "https://prowlarr.zlaya.tech"
+            href: "https://prowlarr.zlayahome.ovh"
             widget:
               type: prowlarr
               url: http://prowlarr.prowlarr.svc.cluster.local:9696
               key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"
         - Bazarr:
             icon: bazarr.svg
-            href: "https://bazarr.zlaya.tech"
+            href: "https://bazarr.zlayahome.ovh"
             widget:
               type: bazarr
               url: http://bazarr.bazarr.svc.cluster.local:6767
@@ -141,12 +141,12 @@ data:
     - AI:
         - Hermes:
             icon: mdi-robot
-            href: "https://hermes.zlaya.tech"
+            href: "https://hermes.zlayahome.ovh"
             description: Autonomous agent — dashboard
     - Security:
         - Authentik:
             icon: authentik.svg
-            href: "https://authentik.zlaya.tech"
+            href: "https://authentik.zlayahome.ovh"
             widget:
               type: authentik
               url: http://authentik-server.authentik.svc.cluster.local

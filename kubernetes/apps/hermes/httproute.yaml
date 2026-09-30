@@ -9,6 +9,7 @@ spec:
       namespace: network
   hostnames:
     - "hermes.zlaya.tech"
+    - "hermes.zlayahome.ovh"
   rules:
     - backendRefs:
         - name: hermes

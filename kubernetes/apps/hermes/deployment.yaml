@@ -21,9 +21,9 @@ spec:
       # route goes through Cloudflare, which 403s Python's urllib UA on
       # the JWKS fetch. Point the hostname at the internal gateway LB.
       hostAliases:
-        - ip: "192.168.1.240"
+        - ip: "192.168.1.243"
           hostnames:
-            - authentik.zlaya.tech
+            - authentik.zlayahome.ovh
       securityContext:
         fsGroup: 10000
       containers:
@@ -59,11 +59,11 @@ spec:
             # SSO via Authentik (OIDC, public PKCE client — the ID is not
             # a secret). Basic auth from the secret stays as a fallback.
             - name: HERMES_DASHBOARD_OIDC_ISSUER
-              value: https://authentik.zlaya.tech/application/o/hermes/
+              value: https://authentik.zlayahome.ovh/application/o/hermes/
             - name: HERMES_DASHBOARD_OIDC_CLIENT_ID
               value: SCLmsXzawFwx5Aa6CJh3tso1lLiNbELKkZzmuWSZ
             - name: HERMES_DASHBOARD_PUBLIC_URL
-              value: https://hermes.zlaya.tech
+              value: https://hermes.zlayahome.ovh
             # Read-only NFS mount of the Obsidian vault mirror; the bundled
             # obsidian skill resolves the vault through this variable.
             - name: OBSIDIAN_VAULT_PATH
