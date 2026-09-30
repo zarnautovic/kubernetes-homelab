@@ -4,12 +4,16 @@ metadata:
   name: authentik
   namespace: authentik
   annotations:
-    # javno kroz Cloudflare Tunnel (external-dns radi proxied CNAME na tunel)
-    external-dns.kubernetes.io/target: b83ff200-e567-4121-ac90-c1e80bc1bbcf.cfargotunnel.com
+    # javno kroz Cloudflare Tunnel: Gateway "public" nosi target (CNAME na tunel), ovdje proxied
     external-dns.kubernetes.io/cloudflare-proxied: "true"
 spec:
   parentRefs:
+    # stara domena, samo zlaya.tech listener (dok traje selidba)
     - name: main
+      namespace: network
+      sectionName: https
+    # nova domena, javno kroz tunel
+    - name: public
       namespace: network
   hostnames:
     - "authentik.zlaya.tech"

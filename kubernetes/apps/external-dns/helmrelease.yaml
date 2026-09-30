@@ -1,8 +1,7 @@
 # external-dns upravlja DNS zapisima zone zlayahome.ovh iz HTTPRoute hostnamea.
 # Privatno/javno se odlučuje anotacijama na HTTPRouti:
 #   (prefiks anotacija je external-dns.kubernetes.io/, stari alpha prefiks se ignorira u 0.22)
-#   javno (kroz Cloudflare Tunnel):
-#     external-dns.kubernetes.io/target: <tunnel-id>.cfargotunnel.com
+#   javno (kroz Cloudflare Tunnel): parentRef na Gateway network/public (nosi target anotaciju) +
 #     external-dns.kubernetes.io/cloudflare-proxied: "true"
 #   privatno (LAN + Tailscale): bez anotacija -> A zapis na Gateway IP 192.168.1.240, DNS-only
 # Dira samo zapise koje sam kreira (TXT registry, owner k8s-homelab).

@@ -4,6 +4,7 @@ resources:
   - namespace.yaml
   - gatewayclass.yaml
   - gateway.yaml
+  - gateway-public.yaml
   - certificate.yaml
   - certificate-zlayahome.yaml
   - httproute-redirect.yaml

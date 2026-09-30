@@ -1,0 +1,41 @@
+# Javni Gateway: na njega pokazuje Cloudflare Tunnel (cloudflared -> cilium-gateway-public svc).
+# Samo javni HTTPRoute-i imaju parentRef na njega; privatni appovi ostaju na Gatewayu "main"
+# i kroz tunel nisu dostupni. external-dns cita target anotaciju s Gatewaya, pa svaki
+# hostname rutiran ovdje dobije CNAME na tunel (uz cloudflare-proxied anotaciju na ruti).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: public
+  namespace: network
+  annotations:
+    external-dns.kubernetes.io/target: b83ff200-e567-4121-ac90-c1e80bc1bbcf.cfargotunnel.com
+spec:
+  gatewayClassName: cilium
+  addresses:
+    - type: IPAddress
+      value: 192.168.1.243
+  listeners:
+    - name: https-ovh
+      port: 443
+      protocol: HTTPS
+      hostname: "*.zlayahome.ovh"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-zlayahome-ovh-tls
+            namespace: network
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-ovh-root
+      port: 443
+      protocol: HTTPS
+      hostname: "zlayahome.ovh"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wildcard-zlayahome-ovh-tls
+            namespace: network
+      allowedRoutes:
+        namespaces:
+          from: All

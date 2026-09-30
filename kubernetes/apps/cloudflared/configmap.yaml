@@ -1,5 +1,5 @@
 # Cloudflare Tunnel "k8s-homelab" (lokalno upravljana konfiguracija; dashboard ingress se ignorira).
-# Sav promet *.zlayahome.ovh ide na Cilium Gateway preko HTTPS-a; Host header prolazi netaknut,
+# Sav promet *.zlayahome.ovh ide na javni Cilium Gateway "public" preko HTTPS-a; Host header prolazi netaknut,
 # SNI je fiksiran na ime unutar wildcarda da Gateway odabere pravi listener/cert.
 apiVersion: v1
 kind: ConfigMap
@@ -14,7 +14,7 @@ data:
     no-autoupdate: true
     ingress:
       - hostname: "*.zlayahome.ovh"
-        service: https://cilium-gateway-main.network.svc.cluster.local:443
+        service: https://cilium-gateway-public.network.svc.cluster.local:443
         originRequest:
           originServerName: tunnel.zlayahome.ovh
           connectTimeout: 10s
