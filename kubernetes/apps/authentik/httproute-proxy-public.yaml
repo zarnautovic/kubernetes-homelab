@@ -13,6 +13,9 @@ spec:
       namespace: network
   hostnames:
     - "seerr.zlayahome.ovh"
+    # health: dashboard iza Authentika, ingest putanje (/health-metrics, /healthz, /strong-import)
+    # prolaze bez logina preko skip_path_regex u proxy provideru (Bearer token u API-ju)
+    - "health.zlayahome.ovh"
   rules:
     - backendRefs:
         - name: authentik-server
