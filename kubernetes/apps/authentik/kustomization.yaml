@@ -6,3 +6,5 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - httproute.yaml
+  - httproute-proxy-private.yaml
+  - httproute-proxy-public.yaml
