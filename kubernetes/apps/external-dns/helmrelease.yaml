@@ -1,0 +1,56 @@
+# external-dns upravlja DNS zapisima zone zlayahome.ovh iz HTTPRoute hostnamea.
+# Privatno/javno se odlučuje anotacijama na HTTPRouti:
+#   javno (kroz Cloudflare Tunnel):
+#     external-dns.alpha.kubernetes.io/target: <tunnel-id>.cfargotunnel.com
+#     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+#   privatno (LAN + Tailscale): bez anotacija -> A zapis na Gateway IP 192.168.1.240, DNS-only
+# Dira samo zapise koje sam kreira (TXT registry, owner k8s-homelab).
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-dns
+  namespace: external-dns
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: external-dns
+      version: "1.22.x"
+      sourceRef:
+        kind: HelmRepository
+        name: external-dns
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    provider:
+      name: cloudflare
+    env:
+      - name: CF_API_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: cloudflare-token
+            key: CF_API_TOKEN
+    sources:
+      - gateway-httproute
+    domainFilters:
+      - zlayahome.ovh
+    # upsert-only: nikad ne briše zapise dok traje selidba; prebaciti na sync u Fazi 4
+    policy: upsert-only
+    registry: txt
+    txtOwnerId: k8s-homelab
+    txtPrefix: "k8s-%{record_type}-"
+    interval: 5m
+    triggerLoopOnEvent: true
+    logLevel: info
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
