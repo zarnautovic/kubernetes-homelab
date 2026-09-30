@@ -5,5 +5,4 @@ resources:
   - pvc.yaml
   - deployment.yaml
   - service.yaml
-  - httproute.yaml
   - flaresolverr.yaml

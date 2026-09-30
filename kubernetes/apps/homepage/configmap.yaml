@@ -113,7 +113,7 @@ data:
     - Health:
         - Health Dashboard:
             icon: mdi-heart-pulse
-            href: "https://health.zlaya.tech"
+            href: "https://health.zlayahome.ovh"
             description: kilaža, unos, san, trening
             widget:
               type: customapi

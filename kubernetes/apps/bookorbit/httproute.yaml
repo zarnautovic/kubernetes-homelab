@@ -8,15 +8,10 @@ metadata:
     external-dns.kubernetes.io/cloudflare-proxied: "true"
 spec:
   parentRefs:
-    # stara domena, samo zlaya.tech listener (dok traje selidba)
-    - name: main
-      namespace: network
-      sectionName: https
     # nova domena, javno kroz tunel; app ima vlastiti OIDC login (bez Authentik proxyja)
     - name: public
       namespace: network
   hostnames:
-    - "books.zlaya.tech"
     - "books.zlayahome.ovh"
   rules:
     - backendRefs:

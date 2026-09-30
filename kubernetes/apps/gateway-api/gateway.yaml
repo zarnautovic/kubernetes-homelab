@@ -12,31 +12,6 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
-    - name: https
-      port: 443
-      protocol: HTTPS
-      hostname: "*.zlaya.tech"
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: wildcard-zlaya-tech-tls
-            namespace: network
-      allowedRoutes:
-        namespaces:
-          from: All
-    - name: https-root
-      port: 443
-      protocol: HTTPS
-      hostname: "zlaya.tech"
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - name: wildcard-zlaya-tech-tls
-            namespace: network
-      allowedRoutes:
-        namespaces:
-          from: All
-    # zlayahome.ovh: ciljna domena (selidba sa zlaya.tech, 30.9.2026)
     - name: https-ovh
       port: 443
       protocol: HTTPS

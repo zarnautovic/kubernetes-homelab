@@ -8,15 +8,10 @@ metadata:
     external-dns.kubernetes.io/cloudflare-proxied: "true"
 spec:
   parentRefs:
-    # stara domena, samo zlaya.tech listener (dok traje selidba)
-    - name: main
-      namespace: network
-      sectionName: https
-    # nova domena, javno kroz tunel
+    # javno kroz tunel
     - name: public
       namespace: network
   hostnames:
-    - "authentik.zlaya.tech"
     - "authentik.zlayahome.ovh"
   rules:
     - backendRefs:

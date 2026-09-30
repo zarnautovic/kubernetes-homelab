@@ -40,8 +40,8 @@ spec:
       - gateway-httproute
     domainFilters:
       - zlayahome.ovh
-    # upsert-only: nikad ne briše zapise dok traje selidba; prebaciti na sync u Fazi 4
-    policy: upsert-only
+    # sync: briše zapise koje je sam napravio (TXT registry) kad hostname nestane iz rute
+    policy: sync
     registry: txt
     txtOwnerId: k8s-homelab
     txtPrefix: "k8s-%{record_type}-"

@@ -7,8 +7,8 @@ spec:
   parentRefs:
     - name: main
       namespace: network
+      sectionName: https-ovh
   hostnames:
-    - "hermes.zlaya.tech"
     - "hermes.zlayahome.ovh"
   rules:
     - backendRefs:
