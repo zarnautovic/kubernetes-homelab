@@ -70,7 +70,11 @@ data:
             icon: immich.svg
             href: "https://photos.zlayahome.ovh"
             description: fotografije i video
-            siteMonitor: http://immich-server.immich.svc.cluster.local:2283/api/server/ping
+            widget:
+              type: immich
+              url: http://immich-server.immich.svc.cluster.local:2283
+              key: "{{HOMEPAGE_VAR_IMMICH_KEY}}"
+              version: 2
         - BookOrbit:
             icon: mdi-book-open-page-variant
             href: "https://books.zlayahome.ovh"
