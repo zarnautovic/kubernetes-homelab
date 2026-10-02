@@ -51,6 +51,7 @@ kubernetes/
     ├── longhorn-system/# Distributed block storage + NFS backups
     ├── authentik/      # SSO / identity provider
     ├── homepage/       # Dashboard
+    ├── adguard/        # AdGuard Home — LAN DNS (ad blocking, .home names), LB 192.168.1.244
     ├── qbittorrent/    # Torrent client (VPN)
     ├── prowlarr/       # Indexer manager + FlareSolverr
     ├── autobrr/        # IRC/RSS release automation
@@ -81,6 +82,7 @@ kubernetes/
 | Longhorn | longhorn-system | longhorn.example.com | Distributed block storage (×3 replicas), daily NFS backups, auto engine-upgrade |
 | Authentik | authentik | authentik.example.com | SSO / identity provider, embedded outpost |
 | Homepage | homepage | example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
+| AdGuard Home | adguard | adguard.example.com | LAN DNS on LB 192.168.1.244 (UDP/TCP 53, externalTrafficPolicy Local); router DHCP hands out `.244,.1` so the router stays the fallback when the rack is down; `.home` names forwarded to the router, static hosts via DNS rewrites; config lives on the PVC (UI), not in git |
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
 | LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
 | Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only |

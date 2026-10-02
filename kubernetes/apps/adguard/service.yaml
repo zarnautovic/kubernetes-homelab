@@ -1,0 +1,38 @@
+# DNS za LAN: fiksni LB IP iz Cilium poola (.240/28), UDP+TCP 53.
+# externalTrafficPolicy Local = AdGuard vidi prave IP-ove uređaja (statistika po klijentu);
+# Cilium L2 kod Local oglašava IP samo s čvora na kojem je pod.
+apiVersion: v1
+kind: Service
+metadata:
+  name: adguard-dns
+  namespace: adguard
+  annotations:
+    lbipam.cilium.io/ips: "192.168.1.244"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: adguard
+  ports:
+    - name: dns-udp
+      port: 53
+      targetPort: 53
+      protocol: UDP
+    - name: dns-tcp
+      port: 53
+      targetPort: 53
+      protocol: TCP
+---
+# Web UI — samo interno; izvana kroz Authentik proxy-private (adguard.zlayahome.ovh).
+apiVersion: v1
+kind: Service
+metadata:
+  name: adguard-web
+  namespace: adguard
+spec:
+  selector:
+    app.kubernetes.io/name: adguard
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

@@ -1,0 +1,14 @@
+# conf/ (AdGuardHome.yaml) + work/ (query log, statistika, filter cache).
+# Konfiguracija se uređuje kroz UI i živi SAMO ovdje — backup kroz Longhorn (grupa nightly-b).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: adguard-data
+  namespace: adguard
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: longhorn

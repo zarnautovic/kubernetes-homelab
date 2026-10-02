@@ -24,6 +24,7 @@ spec:
     - "longhorn.zlayahome.ovh"
     - "home.zlayahome.ovh"
     - "plex.zlayahome.ovh"
+    - "adguard.zlayahome.ovh"
   rules:
     - backendRefs:
         - name: authentik-server
