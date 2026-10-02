@@ -62,7 +62,7 @@ spec:
               mountPath: /dev/net/tun
       containers:
         - name: qbittorrent
-          image: ghcr.io/linuxserver/qbittorrent:5.2.3_v2.0.14-ls477
+          image: ghcr.io/linuxserver/qbittorrent:5.2.4_v2.0.15-ls479
           readinessProbe:
             tcpSocket:
               port: 8080

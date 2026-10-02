@@ -22,7 +22,7 @@ spec:
         containers:
           main:
             image:
-              tag: v3.2.2
+              tag: v3.2.4
             env:
               TZ: Europe/Zagreb
 
@@ -34,6 +34,13 @@ spec:
 
     valkey:
       enabled: true
+      controllers:
+        main:
+          containers:
+            main:
+              image:
+                # Chart 0.13.2 pins an older 9.1 digest; this is 9.1.2-alpine (security fixes, 2026-09-21).
+                tag: 9.1-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
 
     server:
       controllers:

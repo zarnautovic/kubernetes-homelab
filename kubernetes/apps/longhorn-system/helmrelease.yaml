@@ -42,6 +42,13 @@ spec:
       # than the default 8s to respond, otherwise the engine faults them and
       # the volume throws I/O errors -> ext4 journal aborts in the guest.
       engineReplicaTimeout: 30
+      # All apps are single-replica Recreate Deployments / StatefulSets: on a node
+      # failure their pods would otherwise sit in Terminating forever with the
+      # volume locked. Let Longhorn force-delete them so they reschedule.
+      nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+      # Stale replica directories left behind by rebuilds (27 after the 2026-09-24
+      # Talos upgrade) get cleaned up automatically after the grace period.
+      orphanResourceAutoDeletion: replica-data
     persistence:
       defaultClass: true
       defaultClassReplicaCount: 3

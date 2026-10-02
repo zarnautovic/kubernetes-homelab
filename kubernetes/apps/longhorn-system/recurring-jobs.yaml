@@ -4,10 +4,21 @@
 # the node VMs at 02:00 UTC (04:00 local) from the same ZFS pool - the
 # 2026-08-04 etcd election storm was the two backup jobs colliding.
 #
-# Volume -> group mapping lives as labels on the Longhorn Volume CRs:
-#   recurring-job-group.longhorn.io/<nightly-a|b|c>: enabled
+# Volume -> group mapping lives as labels on the Longhorn Volume CRs (PVC
+# labels are NOT synced to existing volumes):
+#   kubectl -n longhorn-system label volumes.longhorn.io <pvc-...> \
+#     recurring-job-group.longhorn.io/nightly-<a|b|c>=enabled \
+#     recurring-job-group.longhorn.io/default-
 # Volumes without any recurring-job label fall into the "default" group,
 # which is swept by the group-c jobs so new PVCs are always backed up.
+# Volumes that must never be backed up (e.g. immich ML model cache, re-downloadable)
+# get recurring-job-group.longhorn.io/no-backup=enabled instead, a group no job uses.
+#
+# Current assignment (2026-10-02, balanced by backup size):
+#   nightly-a: plex-config, health-api-data, autobrr-config, bookorbit-data, bookorbit-postgres
+#   nightly-b: prowlarr-config, hermes-data, sonarr-config, immich-postgres
+#   nightly-c: tautulli, qbittorrent, seerr, authentik-postgresql, bazarr, couchdb, radarr
+#   no-backup: immich-machine-learning (cache)
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:
@@ -103,19 +114,50 @@ spec:
   labels:
     cadence: weekly
 ---
+# Monthly is split like the daily jobs. The single all-groups job (17 volumes,
+# ~16 GB in 4 min incl. plex-config 6 GB) saturated the hypervisor disk on
+# 2026-10-01 08:01 UTC and every leader-elected component lost its lease (same
+# failure mode as the 2026-08-04 incident). 08:00 on the 1st keeps a >1h gap
+# after the last daily/weekly slot even when the 1st falls on a Sunday.
 apiVersion: longhorn.io/v1beta2
 kind: RecurringJob
 metadata:
-  name: backup-monthly
+  name: backup-monthly-a
   namespace: longhorn-system
 spec:
-  # 08:00 on the 1st keeps a >1h gap after the last daily/weekly slot (06:00
-  # + ~30-60min) even when the 1st falls on any day of the week.
   cron: "0 8 1 * *"
   task: backup
   groups:
     - nightly-a
+  retain: 6
+  concurrency: 1
+  labels:
+    cadence: monthly
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-monthly-b
+  namespace: longhorn-system
+spec:
+  cron: "0 9 1 * *"
+  task: backup
+  groups:
     - nightly-b
+  retain: 6
+  concurrency: 1
+  labels:
+    cadence: monthly
+---
+apiVersion: longhorn.io/v1beta2
+kind: RecurringJob
+metadata:
+  name: backup-monthly-c
+  namespace: longhorn-system
+spec:
+  cron: "0 10 1 * *"
+  task: backup
+  groups:
     - nightly-c
     - default
   retain: 6

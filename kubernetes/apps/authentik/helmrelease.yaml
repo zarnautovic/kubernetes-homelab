@@ -41,8 +41,9 @@ spec:
         host: "authentik-postgresql"
         name: authentik
         user: authentik
-      redis:
-        host: "authentik-redis-master"
+      web:
+        # Obavezno od authentik 2026.11 (vidi release notes 2026.8); javni URL kroz tunel.
+        base_url: https://authentik.zlayahome.ovh
     postgresql:
       enabled: true
       auth:
@@ -53,15 +54,6 @@ spec:
           enabled: true
           storageClass: longhorn
           size: 8Gi
-    redis:
-      enabled: true
-      auth:
-        enabled: false
-      master:
-        persistence:
-          enabled: true
-          storageClass: longhorn
-          size: 1Gi
     server:
       ingress:
         enabled: false

@@ -12,7 +12,7 @@ spec:
   storageClassName: ""
   volumeName: bookorbit-books-nfs
 ---
-# App data (covers, book bucket) — Longhorn, picked up by the default recurring backup group.
+# App data (covers, book bucket) — Longhorn; Volume CR labelled nightly-a (see longhorn-system/recurring-jobs.yaml).
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
