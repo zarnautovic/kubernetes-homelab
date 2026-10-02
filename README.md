@@ -6,7 +6,7 @@ GitOps repository for my homelab Kubernetes cluster.
 
 | Component | Technology |
 |---|---|
-| OS | Talos Linux v1.14.1 |
+| OS | Talos Linux v1.14.2 |
 | Kubernetes | v1.36.5 |
 | CNI | Cilium v1.20.2 (kube-proxy replacement, native routing, Gateway API, L2 announcements) |
 | GitOps | Flux CD v2.9 |

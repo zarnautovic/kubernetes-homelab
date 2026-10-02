@@ -9,7 +9,7 @@ backed up on the management VM (`zlaya@192.168.1.199`).
 
 | | |
 |---|---|
-| Talos | v1.14.1 (one Proxmox VM per HP EliteDesk G4 host) |
+| Talos | v1.14.2 (one Proxmox VM per HP EliteDesk G4 host) |
 | Nodes | talos-icw-nam (192.168.1.143), talos-pv0-ntu (192.168.1.135), talos-node-hades (192.168.1.136) |
 | API VIP | 192.168.1.100 (see `vip-patch.yaml`, interface ens18) |
 | Longhorn disk | second disk `/dev/sdb`, mounted at `/var/mnt/longhorn` (see `patch-all.yaml`) |
@@ -19,10 +19,10 @@ backed up on the management VM (`zlaya@192.168.1.199`).
 ## System extensions and factory image
 
 All three nodes run the same factory schematic (verified 2026-09-24 via
-`talosctl get extensions`):
+`talosctl get extensions`; upgraded to v1.14.2 on 2026-10-02):
 
 ```
-factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.14.1
+factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.14.2
 ```
 
 Extensions included in the schematic:
@@ -56,6 +56,14 @@ if the extension set itself changes.
    rebuilds replicas automatically.
 5. If the dead node held Longhorn replicas, verify volume health in the
    Longhorn UI before doing anything else disruptive.
+6. **Talos >= 1.14 fresh installs mount EPHEMERAL (`/var`) with `noexec`**
+   (upgraded nodes keep the old `rw` mount - verified on all three on
+   2026-10-02 via `talosctl read /proc/mounts`). Longhorn v1 executes engine
+   binaries from `/var/lib/longhorn/engine-binaries`, so on a rebuilt node
+   check `talosctl -n <ip> read /proc/mounts | grep ' /var '` first. If it
+   shows `noexec`, apply a `VolumeConfig` for `EPHEMERAL` with
+   `mount.secure: false` (see Talos 1.14 release notes and
+   longhorn/longhorn#14097) before letting Longhorn schedule replicas there.
 
 ## Upgrades
 
@@ -63,7 +71,15 @@ if the extension set itself changes.
 talosctl upgrade --nodes <node-ip> --image <factory-image>:<new-version>
 ```
 
-One node at a time; Longhorn's `node-drain-policy` is
+One node at a time (last done 2026-10-02: 1.14.1 -> 1.14.2, order .143,
+.135, .136), after a manual `talosctl etcd snapshot`. Afterwards sync
+`machine.install.image` on every node:
+
+```bash
+talosctl -n <node-ip> patch mc -p @infrastructure/talos/install-image-patch.yaml
+```
+
+Longhorn's `node-drain-policy` is
 `block-if-contains-last-replica`, so a drain waits if the node holds
 the last healthy replica of any volume (this is intentional — do not
 force it; wait for the rebuild).
