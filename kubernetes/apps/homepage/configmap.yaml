@@ -14,6 +14,10 @@ data:
       Servers:
         icon: mdi-server
         style: row
+        columns: 3
+      Apps:
+        icon: mdi-apps
+        style: row
         columns: 2
       Security:
         icon: mdi-shield-lock
@@ -52,6 +56,26 @@ data:
               key: "{{HOMEPAGE_VAR_TRUENAS_KEY}}"
               enablePools: true
               nasType: scale
+        - AdGuard Home:
+            icon: adguard-home.svg
+            href: "https://adguard.zlayahome.ovh"
+            description: kućni DNS 192.168.1.244
+            widget:
+              type: adguard
+              url: http://adguard-web.adguard.svc.cluster.local
+              username: admin
+              password: "{{HOMEPAGE_VAR_ADGUARD_PASSWORD}}"
+    - Apps:
+        - Immich:
+            icon: immich.svg
+            href: "https://photos.zlayahome.ovh"
+            description: fotografije i video
+            siteMonitor: http://immich-server.immich.svc.cluster.local:2283/api/server/ping
+        - BookOrbit:
+            icon: mdi-book-open-page-variant
+            href: "https://books.zlayahome.ovh"
+            description: knjige, čitač, KOReader sync
+            siteMonitor: http://bookorbit.bookorbit.svc.cluster.local:3000/api/v1/health
     - Media:
         - Plex:
             icon: plex.svg
