@@ -1,9 +1,8 @@
 # Talos node rebuild procedure
 
-What this directory alone can NOT rebuild: machine secrets, the full
-machine configs, and the system-extension list are **not** in the repo.
-Secrets and generated configs (`talosconfig`, `controlplane.yaml`) are
-backed up on the management VM (`zlaya@192.168.1.199`).
+What this directory alone can NOT rebuild: machine secrets and the full
+machine config are **not** in the repo (it is public). They are kept
+age-encrypted outside git — see [Machine secrets backup](#machine-secrets-backup).
 
 ## Cluster facts
 
@@ -42,13 +41,28 @@ if the extension set itself changes.
 1. Create the Proxmox VM: 16GB RAM, two disks (OS + dedicated Longhorn
    disk that will appear as `/dev/sdb`), NIC on the LAN bridge (ens18).
 2. Boot the factory ISO (same extension set as above).
-3. From the management VM (has `talosconfig` + `controlplane.yaml`):
+3. From the management VM, decrypt the live config
+   ([backup](#machine-secrets-backup)) and apply it as is:
 
    ```bash
-   talosctl apply-config --insecure -n <new-node-ip> \
-     -f controlplane.yaml \
-     --config-patch @patch-all.yaml \
-     --config-patch @vip-patch.yaml
+   age -d -i ~/.config/sops/age/keys.txt ~/talos-secrets/controlplane.yaml.age > controlplane.yaml
+   talosctl apply-config --insecure -n <new-node-ip> -f controlplane.yaml
+   shred -u controlplane.yaml
+   ```
+
+   This is the merged live config: `patch-all.yaml` and `vip-patch.yaml`
+   are already in it. Do **not** pass them again — Talos appends list
+   entries on merge, so re-patching duplicates nameservers, time servers,
+   mounts etc. If the backup config is unusable, regenerate one from the
+   secrets bundle (fresh install only):
+
+   ```bash
+   age -d -i ~/.config/sops/age/keys.txt ~/talos-secrets/secrets.yaml.age > secrets.yaml
+   talosctl gen config homelab https://192.168.1.143:6443 \
+     --with-secrets secrets.yaml --install-image <factory-installer-above> \
+     --config-patch @patch-all.yaml --config-patch @vip-patch.yaml \
+     --output-types controlplane -o controlplane.yaml
+   shred -u secrets.yaml
    ```
 
 4. The node joins etcd and the cluster (all three nodes are control
@@ -84,6 +98,32 @@ Longhorn's `node-drain-policy` is
 `block-if-contains-last-replica`, so a drain waits if the node holds
 the last healthy replica of any volume (this is intentional — do not
 force it; wait for the rebuild).
+
+## Machine secrets backup
+
+Not in git (this repo is public). age-encrypted to the same recipient as
+SOPS (`.sops.yaml`), so the existing key decrypts them:
+
+| File | Content |
+|---|---|
+| `controlplane.yaml.age` | full live machine config — identical on all three nodes, patches already merged |
+| `secrets.yaml.age` | `talosctl gen secrets` bundle: Talos/Kubernetes/etcd CAs, SA key, tokens, secretbox key |
+
+- **Where:** `~/talos-secrets/` on the management VM (canonical, in the
+  Proxmox vzdump) and `~/backups/talos/` on the laptop. Created
+  2026-10-05 from the live nodes; decryption and the CA/cluster-id/secretbox
+  match against all three nodes verified.
+- **Decrypt:** `age -d -i ~/.config/sops/age/keys.txt secrets.yaml.age > secrets.yaml`
+  — work in a temp dir and `shred -u` the plaintext afterwards.
+- **Redo after** a CA rotation (`talosctl rotate-ca`) or any machine config
+  change (`talosctl get machineconfig -o jsonpath='{.spec}'` returns the
+  live config). `talosctl gen secrets --from-controlplane-config` accepts
+  only the first (`v1alpha1`) YAML document — strip the `HostnameConfig`
+  documents first, and send its stderr to `/dev/null`: on a parse error it
+  prints the whole config, secrets included.
+- With `secrets.yaml` a lost or expired admin `talosconfig` can be
+  regenerated: `talosctl gen config ... --with-secrets secrets.yaml
+  --output-types talosconfig`.
 
 ## etcd snapshot and restore
 
