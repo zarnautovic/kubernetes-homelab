@@ -72,7 +72,8 @@ talosctl upgrade --nodes <node-ip> --image <factory-image>:<new-version>
 ```
 
 One node at a time (last done 2026-10-02: 1.14.1 -> 1.14.2, order .143,
-.135, .136), after a manual `talosctl etcd snapshot`. Afterwards sync
+.135, .136), after a manual etcd snapshot (`etcd-snapshot.sh`, see below).
+Afterwards sync
 `machine.install.image` on every node:
 
 ```bash
@@ -83,3 +84,76 @@ Longhorn's `node-drain-policy` is
 `block-if-contains-last-replica`, so a drain waits if the node holds
 the last healthy replica of any volume (this is intentional — do not
 force it; wait for the rebuild).
+
+## etcd snapshot and restore
+
+Snapshots are manual on purpose (no cron, decision 2026-08-05): workload
+data is covered by Longhorn backups, the cluster itself is rebuildable.
+Take one before risky work (Talos/Kubernetes upgrades, node replacement,
+large Longhorn snapshot purges):
+
+```bash
+infrastructure/talos/etcd-snapshot.sh            # snapshot from 192.168.1.143
+infrastructure/talos/etcd-snapshot.sh 192.168.1.135   # or from another member
+```
+
+- **Where:** `~/etcd-snapshots/` on the management VM (.199) is the
+  canonical copy; the script keeps the newest 5. The management VM is in
+  the Proxmox vzdump, so the snapshots are backed up with it. Copies on a
+  workstation (e.g. `~/backups/talos/`) are extras, not the reference.
+- **Size:** the DB was 53 MB (21 MB in use) on 2026-10-05; a file under
+  1 MB is rejected by the script.
+
+### Restore or not?
+
+| Situation | Action |
+|---|---|
+| One control-plane node dead, the other two healthy (quorum intact) | **Do not restore.** Remove the dead member (`talosctl -n <healthy-ip> etcd members`, then `talosctl -n <healthy-ip> etcd remove-member <id>`) and rebuild the node ("Rebuilding a dead node"); it rejoins and syncs. |
+| Two or three members lost, or etcd data corrupted (quorum gone) | Restore from snapshot (below). |
+| Kubernetes objects deleted by mistake | Usually Flux re-applies them from git. A restore rolls the **whole** cluster state back to snapshot time — last resort only. |
+
+### Restore procedure (quorum lost)
+
+Follows the Talos "Disaster Recovery" guide. Longhorn data lives on the
+separate `/dev/sdb` disk (`/var/mnt/longhorn`, see `patch-all.yaml`),
+which none of these steps touch.
+
+1. **Pick the snapshot:** newest `~/etcd-snapshots/etcd-*.db`. If there is
+   no snapshot but one member's data directory is still readable, copy the
+   raw DB instead: `talosctl -n <ip> cp /var/lib/etcd/member/snap/db ./db`
+   (needs `--recover-skip-hash-check` in step 4).
+2. **Stop etcd everywhere.** On each control-plane node
+   `talosctl -n <ip> service etcd` must show `Preparing` (waiting for
+   bootstrap). A node that still has old etcd data gets only its
+   EPHEMERAL partition wiped (machine config and the Longhorn disk stay):
+
+   ```bash
+   talosctl -n <ip> reset --graceful=false --reboot --system-labels-to-wipe=EPHEMERAL
+   ```
+
+3. Wait until **all three** nodes report etcd `Preparing`.
+4. **Bootstrap one node from the snapshot:**
+
+   ```bash
+   talosctl -n 192.168.1.143 bootstrap --recover-from=./etcd-YYYYMMDD-HHMMSS.db
+   # raw DB copy from step 1: add --recover-skip-hash-check
+   ```
+
+5. The other two nodes join on their own. Verify:
+
+   ```bash
+   talosctl -n 192.168.1.143 etcd members                                   # 3 members
+   talosctl -n 192.168.1.143,192.168.1.135,192.168.1.136 etcd status
+   kubectl get nodes
+   kubectl get pods -A | grep -v -E 'Running|Completed'
+   ```
+
+6. **Nodes whose EPHEMERAL was wiped:** check
+   `talosctl -n <ip> read /proc/mounts | grep ' /var '`. A re-created
+   EPHEMERAL on Talos >= 1.14 may come back `noexec`, which breaks Longhorn
+   engine binaries; fix it as in step 6 of "Rebuilding a dead node"
+   before Longhorn volumes attach there.
+7. Cluster objects are now at snapshot time. Bring manifests back to git
+   HEAD with `flux reconcile source git flux-system && flux reconcile
+   kustomization flux-system`, then confirm all Longhorn volumes are
+   Healthy before anything else disruptive.
