@@ -1,0 +1,28 @@
+# Read-only: the audit only lists pods cluster-wide to collect running images.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: image-audit
+  namespace: image-audit
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: image-audit-pod-reader
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: image-audit-pod-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: image-audit-pod-reader
+subjects:
+  - kind: ServiceAccount
+    name: image-audit
+    namespace: image-audit

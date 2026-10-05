@@ -43,7 +43,7 @@ Internet → Router (443) → Ubuntu VM (Traefik) → Kubernetes LB (192.168.1.2
 
 ```
 docs/                   # AdGuard config reference, Longhorn backup morning check
-scripts/image-audit.py  # monthly audit: running app images vs latest upstream release
+scripts/image-audit.py  # local wrapper for the monthly image audit (see kubernetes/apps/image-audit)
 kubernetes/
 ├── flux/               # Flux Kustomization resources (one per app)
 └── apps/
@@ -69,7 +69,8 @@ kubernetes/
     ├── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
     ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
     ├── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
-    └── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server
+    ├── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server
+    └── image-audit/    # Monthly CronJob: running images vs upstream releases, posts a table to the Vikunja audit task
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.

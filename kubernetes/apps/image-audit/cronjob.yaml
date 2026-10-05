@@ -1,0 +1,61 @@
+# Monthly image audit: 3rd of the month 07:00 UTC, before the recurring Vikunja task (#21) is due.
+# Read-only: lists running images, looks up upstream releases, posts a comment on the Vikunja task.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: image-audit
+  namespace: image-audit
+spec:
+  schedule: "0 7 3 * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          serviceAccountName: image-audit
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: audit
+              image: python:3.13.16-slim
+              command: ["python3", "/opt/audit/image-audit.py"]
+              env:
+                - name: VIKUNJA_URL
+                  value: http://vikunja.vikunja.svc.cluster.local:3456
+                - name: VIKUNJA_TASK
+                  value: "21"
+                - name: TZ
+                  value: Europe/Zagreb
+              envFrom:
+                - secretRef:
+                    name: image-audit
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  memory: 256Mi
+              volumeMounts:
+                - name: script
+                  mountPath: /opt/audit
+                  readOnly: true
+          volumes:
+            - name: script
+              configMap:
+                name: image-audit-script
+                defaultMode: 0555
