@@ -111,16 +111,21 @@ SOPS (`.sops.yaml`), so the existing key decrypts them:
 
 - **Where:** `~/talos-secrets/` on the management VM (canonical, in the
   Proxmox vzdump) and `~/backups/talos/` on the laptop. Created
-  2026-10-05 from the live nodes; decryption and the CA/cluster-id/secretbox
-  match against all three nodes verified.
+  2026-10-06 from the live nodes; decryption, `talosctl validate -m metal`
+  of the config and the CA/cluster-id/secretbox match against all three
+  nodes verified.
 - **Decrypt:** `age -d -i ~/.config/sops/age/keys.txt secrets.yaml.age > secrets.yaml`
   — work in a temp dir and `shred -u` the plaintext afterwards.
 - **Redo after** a CA rotation (`talosctl rotate-ca`) or any machine config
-  change (`talosctl get machineconfig -o jsonpath='{.spec}'` returns the
-  live config). `talosctl gen secrets --from-controlplane-config` accepts
-  only the first (`v1alpha1`) YAML document — strip the `HostnameConfig`
-  documents first, and send its stderr to `/dev/null`: on a parse error it
-  prints the whole config, secrets included.
+  change. The live config is
+  `talosctl -n <ip> get machineconfig v1alpha1 -o jsonpath='{.spec}'` (two
+  documents: `v1alpha1` + `HostnameConfig`). Always name the `v1alpha1`
+  resource: there is an identical `persistent` one, and an unnamed `get`
+  concatenates both into a file that `apply-config` rejects.
+  `talosctl gen secrets --from-controlplane-config` accepts only the
+  `v1alpha1` document — strip `HostnameConfig` first, and send its stderr
+  to `/dev/null`: on a parse error it prints the whole config, secrets
+  included.
 - With `secrets.yaml` a lost or expired admin `talosconfig` can be
   regenerated: `talosctl gen config ... --with-secrets secrets.yaml
   --output-types talosconfig`.
