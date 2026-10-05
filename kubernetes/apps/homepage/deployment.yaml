@@ -16,6 +16,21 @@ spec:
         app.kubernetes.io/name: homepage
     spec:
       serviceAccountName: homepage
+      # /app/config must be writable: on start Homepage copies every missing
+      # skeleton file into it, so a release that adds one crashes on a
+      # read-only ConfigMap mount. Copy the ConfigMap into an emptyDir
+      # instead; Reloader (annotation above) still restarts the pod when the
+      # ConfigMap changes. Same image only because it has sh + cp.
+      initContainers:
+        - name: copy-config
+          image: ghcr.io/gethomepage/homepage:v2.4.0
+          command: ["sh", "-c", "cp -L /config-src/* /app/config/"]
+          volumeMounts:
+            - name: config-src
+              mountPath: /config-src
+              readOnly: true
+            - name: config
+              mountPath: /app/config
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v2.4.0
@@ -45,11 +60,9 @@ spec:
           volumeMounts:
             - name: config
               mountPath: /app/config
-            - name: logs
-              mountPath: /app/config/logs
       volumes:
-        - name: config
+        - name: config-src
           configMap:
             name: homepage
-        - name: logs
+        - name: config
           emptyDir: {}

@@ -213,6 +213,3 @@ data:
         nodes: true
   docker.yaml: |
     {}
-  custom.css: ""
-  custom.js: ""
-  proxmox.yaml: ""
