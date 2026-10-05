@@ -80,6 +80,11 @@ data:
             href: "https://books.zlayahome.ovh"
             description: knjige, čitač, KOReader sync
             siteMonitor: http://bookorbit.bookorbit.svc.cluster.local:3000/api/v1/health
+        - Vikunja:
+            icon: vikunja.svg
+            href: "https://tasks.zlayahome.ovh"
+            description: zadaci i planovi za homelab (Kanban, MCP)
+            siteMonitor: http://vikunja.vikunja.svc.cluster.local:3456/health
     - Media:
         - Plex:
             icon: plex.svg

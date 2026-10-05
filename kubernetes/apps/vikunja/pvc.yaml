@@ -1,0 +1,13 @@
+# Vikunja file attachments + task backgrounds — Longhorn (nightly backup via default recurring-job group).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vikunja-files
+  namespace: vikunja
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi

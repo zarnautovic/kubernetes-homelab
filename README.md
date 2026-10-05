@@ -66,7 +66,8 @@ kubernetes/
     ├── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
     ├── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
     ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
-    └── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
+    ├── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
+    └── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.
@@ -88,6 +89,7 @@ kubernetes/
 | Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only |
 | Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
 | BookOrbit | bookorbit | books.example.com | Ebook library (Calibre library on TrueNAS NFS `main-pool/books`), web reader, OPDS, KOReader/Kobo sync; own Postgres/pgvector StatefulSet on Longhorn; login via Authentik OIDC |
+| Vikunja | vikunja | tasks.example.com | Task/project tracker for homelab work (Kanban/list/Gantt, CalDAV); own Postgres StatefulSet on Longhorn; private (Gateway `main`, LAN + Tailscale); built-in MCP server at `/api/v2/mcp` used by Claude Code with a scoped API token; local login (registration off), Authentik OIDC planned |
 
 ### Media Stack
 

@@ -1,0 +1,21 @@
+# Privatno (LAN + Tailscale) preko Gatewaya "main"; app ima vlastiti login, pa ne ide kroz Authentik proxy.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: vikunja
+  namespace: vikunja
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+      sectionName: https-ovh
+  hostnames:
+    - "tasks.zlayahome.ovh"
+  rules:
+    - backendRefs:
+        - name: vikunja
+          port: 3456
+      # Attachment uploads and MCP streamable-HTTP sessions outlive Envoy's 15 s default.
+      timeouts:
+        request: 10m
+        backendRequest: 10m
