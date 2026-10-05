@@ -145,7 +145,7 @@ data:
             description: kilaža, unos, san, trening
             widget:
               type: customapi
-              url: http://health-api.health-api.svc.cluster.local:8080/stats?window=7d
+              url: http://health-api.health-api.svc.cluster.local:8080/stats?window=28d
               refreshInterval: 300000
               mappings:
                 - field:
