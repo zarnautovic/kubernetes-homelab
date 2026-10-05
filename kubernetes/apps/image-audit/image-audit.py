@@ -4,11 +4,11 @@
 Runs the same way locally and in-cluster:
   local:      kubectl + (optional) gh for GitHub; prints the table
   in-cluster: pod list via the Kubernetes API (service account), GitHub/Docker Hub via plain HTTPS
-If VIKUNJA_URL + VIKUNJA_TOKEN + VIKUNJA_TASK are set, posts the result as a comment on that task
-(full table when at least one image has a newer upstream release, one short line otherwise).
-Nothing is ever changed in the cluster or in git; this is read-only.
+If VIKUNJA_URL + VIKUNJA_TOKEN + VIKUNJA_TASK are set, posts a comment on that task — but only when the
+set of upgrade candidates changed since the last run (state kept in ConfigMap image-audit-state in-cluster),
+so a daily schedule does not spam the task. Nothing is ever changed in the cluster or in git besides that state.
 """
-import html, json, os, re, ssl, subprocess, sys, urllib.request
+import html, json, os, re, ssl, subprocess, sys, urllib.error, urllib.request
 
 SKIP_PREFIXES = ("registry.k8s.io/", "quay.io/cilium/", "ghcr.io/fluxcd/", "ghcr.io/siderolabs/",
                  "docker.io/longhornio/csi-", "docker.io/longhornio/livenessprobe",
@@ -147,6 +147,34 @@ def print_table(rows):
         flag = "  <-- update?" if r["newer"] else ""
         print(f"{r['repo']:{w}}  {r['running'][:28]:28}  {r['latest'][:28]:28}  {r['source']}{flag}")
 
+STATE_CM = "image-audit-state"
+
+def k8s_state(new=None):
+    """Read (new=None) or write the candidate snapshot kept in a ConfigMap; no-op outside the cluster."""
+    api = os.environ.get("K8S_API")
+    if not api:
+        return None
+    ns = open("/var/run/secrets/kubernetes.io/serviceaccount/namespace").read().strip()
+    tok = open("/var/run/secrets/kubernetes.io/serviceaccount/token").read()
+    base = f"{api}/api/v1/namespaces/{ns}/configmaps"
+    hdr = {"Authorization": "Bearer " + tok, "Content-Type": "application/json"}
+    ctx = ssl.create_default_context(cafile=os.environ["K8S_CA"])
+    def call(method, url, body=None):
+        req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body else None, headers={**UA, **hdr})
+        try:
+            with urllib.request.urlopen(req, timeout=20, context=ctx) as r:
+                return r.status, json.load(r)
+        except urllib.error.HTTPError as e:
+            return e.code, None
+    if new is None:
+        code, cm = call("GET", f"{base}/{STATE_CM}")
+        return json.loads(cm["data"].get("candidates", "{}")) if code == 200 and cm else {}
+    body = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": STATE_CM}, "data": {"candidates": json.dumps(new, sort_keys=True)}}
+    code, _ = call("PUT", f"{base}/{STATE_CM}", body)
+    if code == 404:
+        code, _ = call("POST", base, body)
+    print(f"state saved (HTTP {code})")
+
 def post_comment(rows):
     url, token, task = os.environ.get("VIKUNJA_URL"), os.environ.get("VIKUNJA_TOKEN"), os.environ.get("VIKUNJA_TASK")
     if not (url and token and task) or token == "REPLACE_ME":
@@ -154,13 +182,23 @@ def post_comment(rows):
         return
     from datetime import date
     newer = [r for r in rows if r["newer"]]
+    current = {r["repo"]: r["latest"] for r in newer}          # unknown ("?") lookups never count as a change
+    previous = k8s_state()
+    if previous is not None and previous == current:
+        print(f"no change since last run ({len(current)} candidates) — no comment")
+        return
+    added = {k: v for k, v in current.items() if previous is not None and previous.get(k) != v}
+    resolved = [k for k in (previous or {}) if k not in current]
     if newer:
         body = [f"<p><strong>Audit slika {date.today():%d.%m.%Y}</strong>: {len(newer)} od {len(rows)} slika ima novije upstream izdanje.</p>",
                 "<table><thead><tr><th>Slika</th><th>Sada</th><th>Upstream</th><th>Izvor</th></tr></thead><tbody>"]
         for r in newer:
-            body.append(f"<tr><td><code>{html.escape(r['repo'])}</code></td><td>{html.escape(r['running'])}</td>"
+            mark = " 🆕" if r["repo"] in added and previous else ""
+            body.append(f"<tr><td><code>{html.escape(r['repo'])}</code>{mark}</td><td>{html.escape(r['running'])}</td>"
                         f"<td><strong>{html.escape(r['latest'])}</strong></td><td>{html.escape(r['source'])}</td></tr>")
         body.append("</tbody></table>")
+        if resolved:
+            body.append("<p>Riješeno od prošlog puta: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in resolved) + "</p>")
         unknown = [r for r in rows if r["latest"].startswith("?")]
         if unknown:
             body.append("<p>Bez odgovora/izvora: " + ", ".join(html.escape(r["repo"]) for r in unknown) + "</p>")
@@ -172,6 +210,7 @@ def post_comment(rows):
                                  headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", **UA})
     with urllib.request.urlopen(req, timeout=30) as r:
         print(f"posted comment to task {task} (HTTP {r.status})")
+    k8s_state(current)
 
 if __name__ == "__main__":
     rows = audit()

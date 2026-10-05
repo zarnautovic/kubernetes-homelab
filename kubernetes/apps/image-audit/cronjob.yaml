@@ -1,4 +1,4 @@
-# Monthly image audit: 3rd of the month 07:00 UTC, before the recurring Vikunja task (#21) is due.
+# Daily image audit 07:00 UTC. Posts to the Vikunja audit task (#21) only when the candidate set changes.
 # Read-only: lists running images, looks up upstream releases, posts a comment on the Vikunja task.
 apiVersion: batch/v1
 kind: CronJob
@@ -6,7 +6,7 @@ metadata:
   name: image-audit
   namespace: image-audit
 spec:
-  schedule: "0 7 3 * *"
+  schedule: "0 7 * * *"
   timeZone: Etc/UTC
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3

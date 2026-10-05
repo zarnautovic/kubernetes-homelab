@@ -26,3 +26,28 @@ subjects:
   - kind: ServiceAccount
     name: image-audit
     namespace: image-audit
+---
+# State between runs (last set of upgrade candidates) lives in a ConfigMap in this namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: image-audit-state
+  namespace: image-audit
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: image-audit-state
+  namespace: image-audit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: image-audit-state
+subjects:
+  - kind: ServiceAccount
+    name: image-audit
+    namespace: image-audit
