@@ -85,6 +85,12 @@ data:
             href: "https://tasks.zlayahome.ovh"
             description: zadaci i planovi za homelab (Kanban, MCP)
             siteMonitor: http://vikunja.vikunja.svc.cluster.local:3456/health
+            widget:
+              type: vikunja
+              url: http://vikunja.vikunja.svc.cluster.local:3456
+              key: "{{HOMEPAGE_VAR_VIKUNJA_KEY}}"
+              version: 2
+              enableTaskList: true
     - Media:
         - Plex:
             icon: plex.svg
