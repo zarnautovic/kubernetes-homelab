@@ -1,6 +1,6 @@
 # Vikunja — tasks/projects for the homelab (Kanban, CalDAV, built-in MCP server for agents).
 # Single Go binary serves API + frontend on :3456. MCP endpoint: /api/v2/mcp (API-token auth, created in Settings → MCP).
-# Login: Authentik OIDC (+ local user as fallback, registration off).
+# Login: Authentik OIDC only (local login disabled; user "zlatan" is bound to the Authentik subject).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -54,6 +54,9 @@ spec:
               value: /app/vikunja/files
             # Authentik OIDC (provider "authentik" → callback /auth/openid/authentik); client secret in the SOPS secret.
             # emailfallback links the SSO identity to the existing local user with the same verified email.
+            # Only Authentik SSO on the login page; API tokens (MCP) and CLI user management keep working.
+            - name: VIKUNJA_AUTH_LOCAL_ENABLED
+              value: "false"
             - name: VIKUNJA_AUTH_OPENID_ENABLED
               value: "true"
             - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_NAME
