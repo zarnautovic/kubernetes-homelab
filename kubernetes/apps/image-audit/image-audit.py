@@ -175,6 +175,60 @@ def k8s_state(new=None):
         code, _ = call("POST", base, body)
     print(f"state saved (HTTP {code})")
 
+AUTO_START = "<h3>Trenutni kandidati za nadogradnju (auto)</h3>"
+AUTO_END = "<p><em>— kraj automatskog dijela —</em></p>"
+
+def candidates_table(rows, added=None, previous=None):
+    newer = [r for r in rows if r["newer"]]
+    if not newer:
+        return f"<p>Sve {len(rows)} slike su na zadnjoj upstream verziji.</p>"
+    body = ["<table><thead><tr><th>Slika</th><th>Sada</th><th>Upstream</th><th>Izvor</th></tr></thead><tbody>"]
+    for r in newer:
+        mark = " 🆕" if added and r["repo"] in added and previous else ""
+        body.append(f"<tr><td><code>{html.escape(r['repo'])}</code>{mark}</td><td>{html.escape(r['running'])}</td>"
+                    f"<td><strong>{html.escape(r['latest'])}</strong></td><td>{html.escape(r['source'])}</td></tr>")
+    body.append("</tbody></table>")
+    unknown = [r for r in rows if r["latest"].startswith("?")]
+    if unknown:
+        body.append("<p>Bez odgovora/izvora: " + ", ".join(html.escape(r["repo"]) for r in unknown) + "</p>")
+    return "".join(body)
+
+def vikunja(method, path, body=None):
+    url, token = os.environ["VIKUNJA_URL"].rstrip("/"), os.environ["VIKUNJA_TOKEN"]
+    req = urllib.request.Request(f"{url}/api/v1{path}", method=method,
+                                 data=json.dumps(body).encode() if body is not None else None,
+                                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", **UA})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.load(r)
+    except urllib.error.HTTPError as e:
+        return e.code, None
+
+def update_description(rows, task, changed):
+    """Keep a live section in the task description: table (refreshed on change) + last-check timestamp (every run)."""
+    from datetime import datetime
+    code, t = vikunja("GET", f"/tasks/{task}")
+    if code != 200 or t is None:
+        print(f"description: cannot read task (HTTP {code})"); return
+    desc = t.get("description") or ""
+    stamp = f"<p>Zadnja provjera: {datetime.now():%d.%m.%Y %H:%M}. Tablica se osvježava kad se popis promijeni; povijest je u komentarima.</p>"
+    if AUTO_START in desc and AUTO_END in desc and not changed:
+        head, rest = desc.split(AUTO_START, 1)
+        auto, tail = rest.split(AUTO_END, 1)
+        auto = re.sub(r"<p>Zadnja provjera:.*?</p>", stamp, auto, count=1) if "Zadnja provjera:" in auto else auto + stamp
+        new_desc = head + AUTO_START + auto + AUTO_END + tail
+    else:
+        section = AUTO_START + candidates_table(rows) + stamp + AUTO_END
+        if AUTO_START in desc and AUTO_END in desc:
+            head, rest = desc.split(AUTO_START, 1); _, tail = rest.split(AUTO_END, 1)
+            new_desc = head + section + tail
+        else:
+            new_desc = desc + section
+    if new_desc == desc:
+        return
+    code, _ = vikunja("POST", f"/tasks/{task}", {"description": new_desc})
+    print(f"description {'updated' if code == 200 else 'NOT updated'} (HTTP {code}){'' if code == 200 else ' — token needs Tasks → Update'}")
+
 def post_comment(rows):
     url, token, task = os.environ.get("VIKUNJA_URL"), os.environ.get("VIKUNJA_TOKEN"), os.environ.get("VIKUNJA_TASK")
     if not (url and token and task) or token == "REPLACE_ME":
@@ -184,33 +238,28 @@ def post_comment(rows):
     newer = [r for r in rows if r["newer"]]
     current = {r["repo"]: r["latest"] for r in newer}          # unknown ("?") lookups never count as a change
     previous = k8s_state()
-    if previous is not None and previous == current:
+    changed = previous is None or previous != current
+    update_description(rows, task, changed)
+    if not changed:
         print(f"no change since last run ({len(current)} candidates) — no comment")
         return
+    if os.environ.get("AUDIT_SKIP_COMMENT"):
+        print("comment skipped (AUDIT_SKIP_COMMENT)"); return
     added = {k: v for k, v in current.items() if previous is not None and previous.get(k) != v}
     resolved = [k for k in (previous or {}) if k not in current]
     if newer:
-        body = [f"<p><strong>Audit slika {date.today():%d.%m.%Y}</strong>: {len(newer)} od {len(rows)} slika ima novije upstream izdanje.</p>",
-                "<table><thead><tr><th>Slika</th><th>Sada</th><th>Upstream</th><th>Izvor</th></tr></thead><tbody>"]
-        for r in newer:
-            mark = " 🆕" if r["repo"] in added and previous else ""
-            body.append(f"<tr><td><code>{html.escape(r['repo'])}</code>{mark}</td><td>{html.escape(r['running'])}</td>"
-                        f"<td><strong>{html.escape(r['latest'])}</strong></td><td>{html.escape(r['source'])}</td></tr>")
-        body.append("</tbody></table>")
-        if resolved:
-            body.append("<p>Riješeno od prošlog puta: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in resolved) + "</p>")
-        unknown = [r for r in rows if r["latest"].startswith("?")]
-        if unknown:
-            body.append("<p>Bez odgovora/izvora: " + ", ".join(html.escape(r["repo"]) for r in unknown) + "</p>")
-        comment = "".join(body)
+        comment = (f"<p><strong>Audit slika {date.today():%d.%m.%Y}</strong>: {len(newer)} od {len(rows)} slika ima novije upstream izdanje.</p>"
+                   + candidates_table(rows, added, previous)
+                   + ("<p>Riješeno od prošlog puta: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in resolved) + "</p>" if resolved else ""))
     else:
-        comment = f"<p>Audit slika {date.today():%d.%m.%Y}: sve {len(rows)} slike su na zadnjoj upstream verziji.</p>"
-    req = urllib.request.Request(f"{url.rstrip('/')}/api/v1/tasks/{task}/comments", method="PUT",
-                                 data=json.dumps({"comment": comment}).encode(),
-                                 headers={"Authorization": "Bearer " + token, "Content-Type": "application/json", **UA})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        print(f"posted comment to task {task} (HTTP {r.status})")
-    k8s_state(current)
+        comment = f"<p>Audit slika {date.today():%d.%m.%Y}: sve {len(rows)} slike su na zadnjoj upstream verziji."
+        if resolved:
+            comment += " Riješeno: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in resolved) + "."
+        comment += "</p>"
+    code, _ = vikunja("PUT", f"/tasks/{task}/comments", {"comment": comment})
+    print(f"posted comment to task {task} (HTTP {code})")
+    if code in (200, 201):
+        k8s_state(current)
 
 if __name__ == "__main__":
     rows = audit()
