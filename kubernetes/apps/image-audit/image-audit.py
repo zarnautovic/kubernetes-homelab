@@ -204,26 +204,21 @@ def vikunja(method, path, body=None):
     except urllib.error.HTTPError as e:
         return e.code, None
 
-def update_description(rows, task, changed):
-    """Keep a live section in the task description: table (refreshed on change) + last-check timestamp (every run)."""
+def update_description(rows, task):
+    """Rebuild the auto section of the task description on every run (idempotent upsert); the rest is left alone."""
     from datetime import datetime
     code, t = vikunja("GET", f"/tasks/{task}")
     if code != 200 or t is None:
         print(f"description: cannot read task (HTTP {code})"); return
     desc = t.get("description") or ""
-    stamp = f"<p>Zadnja provjera: {datetime.now():%d.%m.%Y %H:%M}. Tablica se osvježava kad se popis promijeni; povijest je u komentarima.</p>"
-    if AUTO_START in desc and AUTO_END in desc and not changed:
+    stamp = f"<p>Zadnja provjera: {datetime.now():%d.%m.%Y %H:%M}. Ova sekcija se automatski prepisuje; povijest promjena je u komentarima.</p>"
+    section = AUTO_START + candidates_table(rows) + stamp + AUTO_END
+    if AUTO_START in desc and AUTO_END in desc:
         head, rest = desc.split(AUTO_START, 1)
-        auto, tail = rest.split(AUTO_END, 1)
-        auto = re.sub(r"<p>Zadnja provjera:.*?</p>", stamp, auto, count=1) if "Zadnja provjera:" in auto else auto + stamp
-        new_desc = head + AUTO_START + auto + AUTO_END + tail
+        _, tail = rest.split(AUTO_END, 1)
+        new_desc = head + section + tail
     else:
-        section = AUTO_START + candidates_table(rows) + stamp + AUTO_END
-        if AUTO_START in desc and AUTO_END in desc:
-            head, rest = desc.split(AUTO_START, 1); _, tail = rest.split(AUTO_END, 1)
-            new_desc = head + section + tail
-        else:
-            new_desc = desc + section
+        new_desc = desc + section
     if new_desc == desc:
         return
     code, _ = vikunja("POST", f"/tasks/{task}", {"description": new_desc})
@@ -239,7 +234,7 @@ def post_comment(rows):
     current = {r["repo"]: r["latest"] for r in newer}          # unknown ("?") lookups never count as a change
     previous = k8s_state()
     changed = previous is None or previous != current
-    update_description(rows, task, changed)
+    update_description(rows, task)
     if not changed:
         print(f"no change since last run ({len(current)} candidates) — no comment")
         return
