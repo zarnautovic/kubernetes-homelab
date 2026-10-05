@@ -6,6 +6,9 @@ kind: Deployment
 metadata:
   name: vikunja
   namespace: vikunja
+  annotations:
+    # restart when the SOPS secret changes (DB password / service secret)
+    reloader.stakater.com/auto: "true"
 spec:
   replicas: 1
   # vikunja-files is RWO Longhorn
