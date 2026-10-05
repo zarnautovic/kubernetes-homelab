@@ -42,6 +42,8 @@ Internet → Router (443) → Ubuntu VM (Traefik) → Kubernetes LB (192.168.1.2
 ## Repository Structure
 
 ```
+docs/                   # AdGuard config reference, Longhorn backup morning check
+scripts/image-audit.py  # monthly audit: running app images vs latest upstream release
 kubernetes/
 ├── flux/               # Flux Kustomization resources (one per app)
 └── apps/
