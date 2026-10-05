@@ -1,6 +1,6 @@
 # Vikunja — tasks/projects for the homelab (Kanban, CalDAV, built-in MCP server for agents).
 # Single Go binary serves API + frontend on :3456. MCP endpoint: /api/v2/mcp (API-token auth, created in Settings → MCP).
-# Login: local users (registration off); Authentik OIDC added via VIKUNJA_AUTH_OPENID_* once the provider exists.
+# Login: Authentik OIDC (+ local user as fallback, registration off).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -52,6 +52,22 @@ spec:
               value: vikunja-postgres
             - name: VIKUNJA_FILES_BASEPATH
               value: /app/vikunja/files
+            # Authentik OIDC (provider "authentik" → callback /auth/openid/authentik); client secret in the SOPS secret.
+            # emailfallback links the SSO identity to the existing local user with the same verified email.
+            - name: VIKUNJA_AUTH_OPENID_ENABLED
+              value: "true"
+            - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_NAME
+              value: Authentik
+            - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_AUTHURL
+              value: https://authentik.zlayahome.ovh/application/o/vikunja/
+            - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_LOGOUTURL
+              value: https://authentik.zlayahome.ovh/application/o/vikunja/end-session/
+            - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_CLIENTID
+              value: fzETmDuAaDxl0YFpOuv0LFVDBTe0N8hF1k4P6UVg
+            - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_SCOPE
+              value: openid profile email
+            - name: VIKUNJA_AUTH_OPENID_PROVIDERS_AUTHENTIK_EMAILFALLBACK
+              value: "true"
             - name: VIKUNJA_LOG_LEVEL
               value: INFO
             - name: TZ
