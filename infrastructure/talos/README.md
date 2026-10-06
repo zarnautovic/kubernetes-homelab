@@ -65,6 +65,14 @@ if the extension set itself changes.
    shred -u secrets.yaml
    ```
 
+   **If the dead node is 192.168.1.143:** the config's
+   `cluster.controlPlane.endpoint` is `https://192.168.1.143:6443`, so a
+   new node would try to join through the node that is gone. Before
+   `apply-config`, point it at a live member or the VIP
+   (`https://192.168.1.100:6443`, needs etcd up). Running nodes don't care
+   — kubelets use KubePrism (`localhost:7445`); kubeconfigs use the VIP and
+   talosconfig lists all three nodes as endpoints (set 2026-10-06).
+
 4. The node joins etcd and the cluster (all three nodes are control
    plane). Longhorn detects the empty `/var/mnt/longhorn` disk and
    rebuilds replicas automatically.
