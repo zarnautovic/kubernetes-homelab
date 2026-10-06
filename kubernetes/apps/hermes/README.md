@@ -40,8 +40,10 @@ mirror is mounted read-only at `/vault` (uid 10000 can read the
   (non-root uid 10000, resource-limited, no cluster RBAC). Keep the
   "smart" dangerous-command approval mode on.
 - The OpenAI-compatible API (8642) is cluster-internal only. The web
-  dashboard (9119) is off; if enabled later it must sit behind
-  Authentik (OIDC) — auth is mandatory on non-loopback binds.
+  dashboard (9119) is on (`HERMES_DASHBOARD=1`), private only: HTTPRoute
+  on Gateway `main` (LAN/Tailscale), login via Authentik OIDC
+  (`HERMES_DASHBOARD_OIDC_*`). The basic-auth credentials in the secret
+  are still set as a fallback — auth is mandatory on non-loopback binds.
 - `auth.json` on the PVC holds the ChatGPT OAuth tokens — treat the
   volume as secret material (it is covered by Longhorn NFS backups).
 

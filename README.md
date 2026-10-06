@@ -28,15 +28,18 @@ Each Talos node is a Proxmox VM (16GB RAM allocated), one per physical **HP Elit
 
 ## Networking
 
-Traffic flow for external access:
+Two Cilium Gateways in the `network` namespace share one wildcard certificate (`*.example.com`, cert-manager DNS-01 via Cloudflare):
 
 ```
-Internet → Router (443) → Ubuntu VM (Traefik) → Kubernetes LB (192.168.1.240) → Cilium Gateway API
+Public:  Internet → Cloudflare (proxied) → Cloudflare Tunnel (cloudflared) → Gateway `public` (192.168.1.243) → app
+Private: LAN / Tailscale → Gateway `main` (192.168.1.240) → app
 ```
 
+- No inbound port forwarding: the tunnel is outbound-only; `cloudflared` sends `*.example.com` to the `cilium-gateway-public` service.
+- A route's `parentRef` decides its exposure. Only routes on `public` are reachable from the internet; everything on `main` (admin UIs behind the Authentik proxy, Vikunja, Hermes) is LAN/Tailscale-only.
+- external-dns (Cloudflare, source `gateway-httproute`, policy `sync`) writes the records: proxied CNAMEs to the tunnel for `public` routes (target annotation on the Gateway), A records to 192.168.1.240 for `main` routes — they resolve everywhere but only answer on the LAN or over Tailscale.
 - Gateway API v1.6.1 with Cilium GatewayClass
-- Gateway `main` in `network` namespace — listeners on HTTP :80 and HTTPS :443
-- HTTP → HTTPS redirect at gateway level
+- HTTP → HTTPS redirect at gateway level (`main`)
 - Cilium is bootstrapped via Helm at install (CNI chicken-and-egg) and managed day-2 by a Flux HelmRelease (`kube-system/cilium`)
 
 ## Repository Structure
@@ -48,7 +51,9 @@ kubernetes/
 ├── flux/               # Flux Kustomization resources (one per app)
 └── apps/
     ├── cert-manager/   # TLS certificate management
-    ├── gateway-api/    # Gateway + HTTPRoutes
+    ├── gateway-api/    # Gateways main (private) + public (tunnel), wildcard cert, HTTP→HTTPS redirect
+    ├── cloudflared/    # Cloudflare Tunnel → Gateway public
+    ├── external-dns/   # Cloudflare DNS records from HTTPRoutes
     ├── kube-system/    # Cilium (HelmRelease), metrics-server, reloader
     ├── longhorn-system/# Distributed block storage + NFS backups
     ├── authentik/      # SSO / identity provider
@@ -67,6 +72,7 @@ kubernetes/
     ├── intel-gpu-plugin/ # iGPU device plugin
     ├── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
     ├── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
+    ├── health-api/     # Apple Health import + vault index + stats API/dashboard (Go)
     ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
     ├── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
     ├── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server
@@ -83,16 +89,21 @@ kubernetes/
 |---|---|---|---|
 | Cilium | kube-system | — | CNI, kube-proxy replacement, Gateway API, L2; Flux-managed HelmRelease |
 | cert-manager | cert-manager | — | DNS-01 via Cloudflare, letsencrypt staging + production |
+| Gateway API | network | — | Gateways `main` (192.168.1.240, private) and `public` (192.168.1.243, behind the tunnel); wildcard TLS |
+| cloudflared | cloudflared | — | Cloudflare Tunnel (2 replicas, outbound-only) → Gateway `public`; no port forwarding |
+| external-dns | external-dns | — | Cloudflare records from HTTPRoutes: proxied CNAME to the tunnel for `public`, A → 192.168.1.240 for `main` |
 | Longhorn | longhorn-system | longhorn.example.com | Distributed block storage (×3 replicas), daily NFS backups, auto engine-upgrade |
 | Authentik | authentik | authentik.example.com | SSO / identity provider, embedded outpost |
-| Homepage | homepage | example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets |
+| Homepage | homepage | home.example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets; private (Gateway `main`) |
 | AdGuard Home | adguard | adguard.example.com | LAN DNS on LB 192.168.1.244 (UDP/TCP 53, externalTrafficPolicy Local); router DHCP hands out `.244,.1` so the router stays the fallback when the rack is down; `.home` names forwarded to the router, static hosts via DNS rewrites; config lives on the PVC (UI), not in git |
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
 | LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
-| Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only |
+| Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only; web dashboard private (Gateway `main`), login via Authentik OIDC |
+| health-api | health-api | health.example.com | Go service: Apple Health (HAE) and Strong imports, SQLite index of the vault's Health notes, stats/calibration/program API + dashboard; behind the Authentik proxy; image built by GitHub Actions |
 | Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
 | BookOrbit | bookorbit | books.example.com | Ebook library (Calibre library on TrueNAS NFS `main-pool/books`), web reader, OPDS, KOReader/Kobo sync; own Postgres/pgvector StatefulSet on Longhorn; login via Authentik OIDC |
-| Vikunja | vikunja | tasks.example.com | Task/project tracker for homelab work (Kanban/list/Gantt, CalDAV); own Postgres StatefulSet on Longhorn; private (Gateway `main`, LAN + Tailscale); built-in MCP server at `/api/v2/mcp` used by Claude Code with a scoped API token; local login (registration off), Authentik OIDC planned |
+| Vikunja | vikunja | tasks.example.com | Task/project tracker for homelab work (Kanban/list/Gantt, CalDAV); own Postgres StatefulSet on Longhorn; private (Gateway `main`, LAN + Tailscale); built-in MCP server at `/api/v2/mcp` used by Claude Code with a scoped API token; login via Authentik OIDC only (local login disabled) |
+| image-audit | image-audit | — | Monthly CronJob: running images vs upstream releases → table in the Vikunja audit task |
 
 ### Media Stack
 
@@ -108,6 +119,7 @@ kubernetes/
 | Seerr | seerr | seerr.example.com | Media request UI, connects to Plex + Sonarr + Radarr |
 | Plex | plex | plex.example.com | Media server, LB IP 192.168.1.241:32400, Intel UHD 630 HW transcode |
 | Tautulli | tautulli | tautulli.example.com | Plex analytics and monitoring |
+| Intel GPU plugin | kube-system | — | Device plugin exposing the iGPU (`gpu.intel.com/i915`) for Plex HW transcode |
 
 ## Storage
 
