@@ -20,3 +20,28 @@ data:
         echo "[remove-stale-lock] removing stale /config/qBittorrent/lockfile"
         rm -f /config/qBittorrent/lockfile
     fi
+  # The WebUI auth whitelist lived only in qBittorrent.conf on the PVC; the
+  # *arr apps and Homepage rely on it (no login from the LAN and the pod
+  # network). Enforced here on every start so a reset/restored config gets it
+  # back. Busybox awk: values go in via ENVIRON, because -v would treat the
+  # backslash in "WebUI\..." as an escape.
+  20-webui-whitelist.sh: |
+    #!/bin/bash
+    conf=/config/qBittorrent/qBittorrent.conf
+    if [[ ! -f "$conf" ]]; then
+        echo "[webui-whitelist] $conf missing, skipping"
+        exit 0
+    fi
+    set_pref() {  # $1 = key below WebUI\, $2 = value
+        local key="WebUI\\$1"
+        if grep -qF "${key}=" "$conf"; then
+            K="$key" V="$2" awk 'index($0, ENVIRON["K"] "=") == 1 { print ENVIRON["K"] "=" ENVIRON["V"]; next } { print }' "$conf" > "$conf.tmp"
+        else
+            K="$key" V="$2" awk '{ print } $0 == "[Preferences]" { print ENVIRON["K"] "=" ENVIRON["V"] }' "$conf" > "$conf.tmp"
+        fi
+        # cat keeps the owner/mode of the original file
+        cat "$conf.tmp" > "$conf" && rm -f "$conf.tmp"
+    }
+    set_pref AuthSubnetWhitelistEnabled true
+    set_pref AuthSubnetWhitelist "192.168.1.0/24, 10.244.0.0/16"
+    echo "[webui-whitelist] WebUI auth whitelist enforced"

@@ -81,8 +81,10 @@ spec:
               value: Europe/Zagreb
             - name: WEBUI_PORT
               value: "8080"
+            # pinned (was :latest); image-audit does not see DOCKER_MODS,
+            # bump by hand from github.com/VueTorrent/VueTorrent releases
             - name: DOCKER_MODS
-              value: ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
+              value: ghcr.io/vuetorrent/vuetorrent-lsio-mod:2.36.1
           ports:
             - name: http
               containerPort: 8080
