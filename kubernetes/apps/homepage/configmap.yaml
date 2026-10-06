@@ -56,6 +56,9 @@ data:
               key: "{{HOMEPAGE_VAR_TRUENAS_KEY}}"
               enablePools: true
               nasType: scale
+              # 2 = websocket API (/api/current); 1 (default) = REST, which
+              # TrueNAS 26.04 removes (RESTAPIUsage alert until 6.10.2026)
+              version: 2
         - AdGuard Home:
             icon: adguard-home.svg
             href: "https://adguard.zlayahome.ovh"
