@@ -97,7 +97,7 @@ kubernetes/
 | Homepage | homepage | home.example.com | Dashboard with Proxmox, TrueNAS, Authentik, Plex widgets; private (Gateway `main`) |
 | AdGuard Home | adguard | adguard.example.com | LAN DNS on LB 192.168.1.244 (UDP/TCP 53, externalTrafficPolicy Local); router DHCP hands out `.244,.1` so the router stays the fallback when the rack is down; `.home` names forwarded to the router, static hosts via DNS rewrites; config lives on the PVC (UI), not in git |
 | Obsidian LiveSync | obsidian-livesync | obsidian-sync.example.com | CouchDB sync backend for Obsidian |
-| LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (for Home Assistant + agents); image built from source at ghcr.io/zarnautovic/livesync-bridge |
+| LiveSync Bridge | obsidian-livesync | — | Two-way mirror of the vault to TrueNAS NFS plain files (read by Hermes and health-api; writes go through its `vault-webhook` sidecar); image built from source at ghcr.io/zarnautovic/livesync-bridge |
 | Hermes Agent | hermes | — | Autonomous agent (Nous Research); Telegram chat surface, ChatGPT-subscription OAuth (Codex), vault mirror mounted read-only; web dashboard private (Gateway `main`), login via Authentik OIDC |
 | health-api | health-api | health.example.com | Go service: Apple Health (HAE) and Strong imports, SQLite index of the vault's Health notes, stats/calibration/program API + dashboard; behind the Authentik proxy; image built by GitHub Actions |
 | Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
@@ -136,7 +136,7 @@ Three distinct tiers:
 - **TrueNAS NFS (photos)** — Immich library (originals, thumbnails, encoded video, Immich DB dumps), runs as UID/GID 3001.
   - `nfs://192.168.1.101:/mnt/main-pool/photos` (share limited to the three node IPs, 500 GiB quota)
   - ZFS snapshots hourly (48 h) / daily (30 d) / monthly (12 mo), replicated nightly to `backup-pool/photos`
-- **TrueNAS NFS (vault mirror)** — plain-file mirror of the Obsidian vault, written by livesync-bridge and mounted read-mostly by Home Assistant and automation.
+- **TrueNAS NFS (vault mirror)** — plain-file mirror of the Obsidian vault, written by livesync-bridge (and its `vault-webhook` sidecar); Hermes and health-api mount `vault-mirror/vault` read-only (PVC `vault-ro`). Home Assistant does not mount it.
   - `nfs://192.168.1.101:/mnt/main-pool/vault-mirror`
 
 ## Secrets
