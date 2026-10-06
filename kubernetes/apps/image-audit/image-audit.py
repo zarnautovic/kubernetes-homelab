@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Monthly image audit: running app images in the cluster vs. latest upstream release.
+"""Daily image audit: running app images in the cluster vs. latest upstream release.
 
 Runs the same way locally and in-cluster:
   local:      kubectl + (optional) gh for GitHub; prints the table
@@ -17,8 +17,10 @@ SKIP_PREFIXES = ("registry.k8s.io/", "quay.io/cilium/", "ghcr.io/fluxcd/", "ghcr
                  "quay.io/jetstack/cert-manager-webhook", "quay.io/jetstack/cert-manager-cainjector",
                  "ghcr.io/immich-app/immich-machine-learning")
 # image repo -> ("gh", "owner/repo"[, tag_regex]) GitHub releases, ("hub", "ns/repo", tag_regex) Docker Hub tags,
-# ("manual", "note"). Own images (ghcr.io/zarnautovic/*) are git-sha tagged and deployed by hand.
+# ("git", "owner/repo", "branch") own build tagged with an upstream commit sha — reports how far the branch
+# moved on, ("manual", "note"). Other own images (ghcr.io/zarnautovic/*) are git-sha tagged and deployed by hand.
 SOURCES = {
+    "ghcr.io/zarnautovic/livesync-bridge": ("git", "vrtmrz/livesync-bridge", "main"),
     "docker.io/longhornio/longhorn-manager": ("gh", "longhorn/longhorn"),
     "intel/intel-gpu-plugin": ("gh", "intel/intel-device-plugins-for-kubernetes"),
     "ghcr.io/recyclarr/recyclarr": ("gh", "recyclarr/recyclarr"),
@@ -117,6 +119,16 @@ def latest_hub(repo, pattern):
     hits = [t["name"] for t in data["results"] if rx.match(t["name"])]
     return max(hits, key=vkey) if hits else "? (no tag matched)"
 
+def latest_git(repo, branch, sha):
+    """Own build tagged with upstream commit `sha`: the branch head, and how many commits it is ahead."""
+    c = gh_api(f"repos/{repo}/compare/{sha}...{branch}")
+    if "ahead_by" not in c:
+        return "? (" + c.get("_error", c.get("message", "api")) + ")"
+    if c["ahead_by"] == 0:
+        return sha
+    head = c["commits"][-1]["sha"][:7] if c.get("commits") else branch
+    return f"{head} ({branch} +{c['ahead_by']})"
+
 def norm(v):
     return re.sub(r"^(version/|v)", "", v).split("@")[0]
 
@@ -125,7 +137,9 @@ def audit():
     for image in running_images():
         repo, tag = split(image)
         src = SOURCES.get(repo)
-        if repo.startswith("ghcr.io/zarnautovic/"):
+        if src and src[0] == "git":
+            latest, source = latest_git(src[1], src[2], tag), f"git:{src[1]}@{src[2]}"
+        elif repo.startswith("ghcr.io/zarnautovic/"):
             latest, source = "(own build)", "git"
         elif not src:
             latest, source = "? (no source mapping)", "-"

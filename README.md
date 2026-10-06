@@ -46,7 +46,7 @@ Private: LAN / Tailscale → Gateway `main` (192.168.1.240) → app
 
 ```
 docs/                   # AdGuard config reference, Longhorn backup morning check
-scripts/image-audit.py  # local wrapper for the monthly image audit (see kubernetes/apps/image-audit)
+scripts/image-audit.py  # local wrapper for the daily image audit (see kubernetes/apps/image-audit)
 kubernetes/
 ├── flux/               # Flux Kustomization resources (one per app)
 └── apps/
@@ -76,7 +76,7 @@ kubernetes/
     ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
     ├── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
     ├── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server
-    └── image-audit/    # Monthly CronJob: running images vs upstream releases, posts a table to the Vikunja audit task
+    └── image-audit/    # Daily CronJob: running images vs upstream releases (own builds vs upstream commits), table in the Vikunja audit task
 ```
 
 > URLs below use `example.com` as a placeholder for the real domain.
@@ -103,7 +103,7 @@ kubernetes/
 | Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
 | BookOrbit | bookorbit | books.example.com | Ebook library (Calibre library on TrueNAS NFS `main-pool/books`), web reader, OPDS, KOReader/Kobo sync; own Postgres/pgvector StatefulSet on Longhorn; login via Authentik OIDC |
 | Vikunja | vikunja | tasks.example.com | Task/project tracker for homelab work (Kanban/list/Gantt, CalDAV); own Postgres StatefulSet on Longhorn; private (Gateway `main`, LAN + Tailscale); built-in MCP server at `/api/v2/mcp` used by Claude Code with a scoped API token; login via Authentik OIDC only (local login disabled) |
-| image-audit | image-audit | — | Monthly CronJob: running images vs upstream releases → table in the Vikunja audit task |
+| image-audit | image-audit | — | Daily CronJob: running images vs upstream releases (livesync-bridge: commits behind upstream main) → table in the Vikunja audit task; comments only when the candidate set changes |
 
 ### Media Stack
 
