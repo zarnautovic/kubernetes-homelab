@@ -17,27 +17,10 @@ spec:
       labels:
         app.kubernetes.io/name: plex
     spec:
-      initContainers:
-        - name: restore-config
-          image: alpine:3.22
-          command:
-            - sh
-            - -c
-            - |
-              if [ ! -d /config/Library ]; then
-                echo "Restoring Plex config from backup..."
-                cp -r /backup/Library /config/
-                chown -R 3000:3000 /config/Library
-                echo "Restore complete"
-              else
-                echo "Config already exists, skipping restore."
-              fi
-          volumeMounts:
-            - name: config
-              mountPath: /config
-            - name: media
-              mountPath: /backup
-              subPath: plex-backup
+      # No restore initContainer: it copied media/plex-backup (frozen since
+      # 2026-03-01) into an empty /config, silently resurrecting a stale
+      # library. Recovery is the Longhorn backup of plex-config (group
+      # nightly-a, daily).
       containers:
         - name: plex
           image: plexinc/pms-docker:1.43.4.10903-e5521bd8c
