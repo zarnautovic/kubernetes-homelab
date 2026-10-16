@@ -80,7 +80,30 @@ Posljedice:
 5. **Authentik**: Admin → Providers → novi Proxy provider `adguard` (external host `https://adguard.zlayahome.ovh`, internal `http://adguard-web.adguard.svc.cluster.local`), Application, dodati u embedded outpost; restart `authentik-server` (poznato ponašanje). Test logina.
 6. **Router**: DHCP DNS = `192.168.1.244,192.168.1.1` (okrenuti redoslijed; danas stoji obrnuto). Na managment VM-u `sudo networkctl renew enp6s18` ili reboot klijenata; provjera `resolvectl status` → DNS .244, search `home`. AdGuard dashboard pokazuje klijente po IP-u/imenu.
 7. **Statički hostovi** (Proxmox ×3, TrueNAS) ostaju na .1 — nije nužno mijenjati; po želji ručno na .244.
-8. **Nakon tjedan dana**: provjeriti statistiku (lažno blokirano → allowlist), vrijeme odgovora, Longhorn backup volumena; dodati AdGuard widget na Homepage (ima nativni `adguard` widget; treba URL + user/pass u secretu); u mjesečni audit dodati `adguard/adguardhome` tag.
+8. **Nakon tjedan dana**: ~~provjeriti statistiku (lažno blokirano → allowlist)~~ GOTOVO 16.10. (vidi "Pregled 16.10.2026"), vrijeme odgovora, Longhorn backup volumena; dodati AdGuard widget na Homepage (ima nativni `adguard` widget; treba URL + user/pass u secretu); u mjesečni audit dodati `adguard/adguardhome` tag.
+
+## Pregled 16.10.2026 (Vikunja #4)
+
+Statistika 2.–16.10.: 995k upita, 13.5 % blokirano, prosječno 1.7 ms. Querylog 9.–16.10.: 69 856 blokiranih.
+
+**Allowlist: prazna.** Nijedno blokiranje nije potvrđeno kao kvar; Zlatan prati. Ako se nešto od ovoga pokvari, dodati pravilo u Filters → Custom filtering rules:
+
+| Simptom | Pravilo | Blokira | Klijenti (7 d) |
+|---|---|---|---|
+| Android TV početni ekran bez redova kanala/preporuka | `@@\|\|androidtvchannels-pa.googleapis.com^`, `@@\|\|androidtvwatsonfe-pa.googleapis.com^` | AdGuard DNS filter | philips-tv 1727/695, xiaomi-tv 1642/50 |
+| Google traka s računom / izbornik aplikacija (Gmail, Drive) ne radi | `@@\|\|ogads-pa.clients6.google.com^`, `@@\|\|ogads-pa.googleapis.com^` | AdGuard DNS filter | razni |
+| Klik na sponzorirani rezultat u Google pretrazi ne vodi nikamo | `@@\|\|googleads.g.doubleclick.net^` (namjerno ostaje blokirano) | OISD `\|\|g.doubleclick.net^` | xiaomi-tv 833, wall-tablet 178 |
+| Link iz maila/oglasa ne otvara aplikaciju (deep link) | `@@\|\|att.launches.appsflyersdk.com^` | AdGuard DNS filter | ubuntu-media 63 |
+
+Ostalo blokirano je telemetrija i oglasni SDK-ovi, bez očekivanog kvara: marijana-iphone (WhatsApp `dit.whatsapp.net`, Braze, InMobi, AppLovin), zlaya-arch-2 (Battle.net telemetrija, Chrome `beacons*.gvt2.com`), philips-tv (`analytics.plex.tv` 5340, Netflix logovi), xiaomi-tv (`spade.twitch.tv`, Netflix logovi, `app-measurement.com`), wall-tablet (Samsung dijagnostika, Mintegral). managment.home uključuje Tailscale klijente (SNAT).
+
+**Philips TV (.19) zove sumnjive domene**: `int.akisinn.site`, `int.dewrain.site`, `int.dewrain.world`, `int.kvaedit.site`, `int.vaicore.site`, `int.vaicore.store`, `int.vaicore.xyz` — 166 upita, sve blokira AdGuard DNS filter. Uzorak (rotirajuće domene) liči na adware iz ručno instaliranog APK-a. Otvoreno: pregledati aplikacije na TV-u.
+
+**PlayFi zvučnik (.221, PlayFi-Living-Room27791D) = 38 % svih upita.** Svake ~3 s pita PTR `1.1.168.192.in-addr.arpa`. Odgovor je ispravan (`OpenWrt.home`, NOERROR), ali router (Technicolor, dnsmasq) daje TTL 0, a router nema SSH da se to promijeni. Rješenje 16.10.: domena je u `ignored` za statistiku i querylog (`ignored_enabled: true`). Upiti i dalje prolaze, samo se ne broje. Postojeći zapisi istječu sami (querylog 7 d, statistika 30 d).
+
+**Imenovani klijenti** (persistent, po IP-u — router im ne daje ime, a pod ne vidi MAC): `xiaomi-tv` = .93, `ps5` = .50. Ako im se IP promijeni, ime ostaje na starom IP-u; tada dodati DHCP rezervaciju u routeru ili promijeniti IP u Settings → Client settings.
+
+Sve tri postavke su i u `~/.config/adguard/adguard-setup.sh`.
 
 ## Rollback
 Router DHCP DNS natrag na `192.168.1.1` (ili `192.168.1.1,192.168.1.244` kao danas) → klijenti pri idućem lease renewu idu kao danas. k8s dio može ostati, nikog ne smeta.
