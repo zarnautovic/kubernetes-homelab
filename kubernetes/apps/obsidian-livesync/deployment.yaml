@@ -33,7 +33,7 @@ spec:
               mountPath: /opt/couchdb/etc/local.d
       containers:
         - name: couchdb
-          image: couchdb:3.5.2.1
+          image: couchdb:3.5.3
           readinessProbe:
             tcpSocket:
               port: 5984
