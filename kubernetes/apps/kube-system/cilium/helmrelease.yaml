@@ -66,3 +66,13 @@ spec:
 
     operator:
       replicas: 2
+
+    # Restart one agent / one Envoy at a time on upgrades. The chart default
+    # (2) took two of the three Gateway Envoys down at once (seen on 1.20.3).
+    updateStrategy:
+      rollingUpdate:
+        maxUnavailable: 1
+    envoy:
+      updateStrategy:
+        rollingUpdate:
+          maxUnavailable: 1
