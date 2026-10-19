@@ -38,7 +38,7 @@ Private: LAN / Tailscale → Gateway `main` (192.168.1.240) → app
 - No inbound port forwarding: the tunnel is outbound-only; `cloudflared` sends `*.example.com` to the `cilium-gateway-public` service.
 - A route's `parentRef` decides its exposure. Only routes on `public` are reachable from the internet; everything on `main` (admin UIs behind the Authentik proxy, Vikunja, Hermes) is LAN/Tailscale-only.
 - external-dns (Cloudflare, source `gateway-httproute`, policy `sync`) writes the records: proxied CNAMEs to the tunnel for `public` routes (target annotation on the Gateway), A records to 192.168.1.240 for `main` routes — they resolve everywhere but only answer on the LAN or over Tailscale.
-- Gateway API v1.6.1 with Cilium GatewayClass
+- Gateway API v1.6.3 with Cilium GatewayClass
 - HTTP → HTTPS redirect at gateway level (`main`)
 - Cilium is bootstrapped via Helm at install (CNI chicken-and-egg) and managed day-2 by a Flux HelmRelease (`kube-system/cilium`)
 
