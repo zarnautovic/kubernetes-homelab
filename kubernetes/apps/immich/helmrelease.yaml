@@ -22,7 +22,7 @@ spec:
         containers:
           main:
             image:
-              tag: v3.2.4
+              tag: v3.3.3
             env:
               TZ: Europe/Zagreb
 
