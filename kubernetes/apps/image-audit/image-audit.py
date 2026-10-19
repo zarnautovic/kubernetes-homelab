@@ -16,11 +16,17 @@ SKIP_PREFIXES = ("registry.k8s.io/", "quay.io/cilium/", "ghcr.io/fluxcd/", "ghcr
                  "docker.io/longhornio/longhorn-engine", "docker.io/longhornio/longhorn-ui",
                  "quay.io/jetstack/cert-manager-webhook", "quay.io/jetstack/cert-manager-cainjector",
                  "ghcr.io/immich-app/immich-machine-learning")
+# Exceptions to SKIP_PREFIXES: one representative image per platform component whose version is worth tracking.
+INCLUDE_PREFIXES = ("quay.io/cilium/cilium:", "registry.k8s.io/kube-apiserver:")
 # image repo -> ("gh", "owner/repo"[, tag_regex]) GitHub releases, ("hub", "ns/repo", tag_regex[, name_filter]) Docker Hub
 # tags (name_filter narrows the query for repos whose 100 most recent tags may not include the wanted line),
+# ("gh-line", "owner/repo") latest patch within the running minor line, plus a separate "(minor)" row that only
+# turns into a candidate once a newer minor is GA (CNI / Kubernetes: patches are routine, minors are a project),
 # ("git", "owner/repo", "branch") own build tagged with an upstream commit sha — reports how far the branch
 # moved on, ("manual", "note"). Other own images (ghcr.io/zarnautovic/*) are git-sha tagged and deployed by hand.
 SOURCES = {
+    "quay.io/cilium/cilium": ("gh-line", "cilium/cilium"),
+    "registry.k8s.io/kube-apiserver": ("gh-line", "kubernetes/kubernetes"),
     "ghcr.io/zarnautovic/livesync-bridge": ("git", "vrtmrz/livesync-bridge", "main"),
     "docker.io/longhornio/longhorn-manager": ("gh", "longhorn/longhorn"),
     "intel/intel-gpu-plugin": ("gh", "intel/intel-device-plugins-for-kubernetes"),
@@ -53,6 +59,10 @@ SOURCES = {
     "python": ("hub", "library/python", r"^3\.13\.\d+-slim$", "3.13."),
     "nousresearch/hermes-agent": ("hub", "nousresearch/hermes-agent", r"^v?\d+\.\d+\.\d+$"),
 }
+# Known, deliberately deferred candidates: shown with this note in the source column (still listed, not hidden).
+NOTES = {
+    "registry.k8s.io/kube-apiserver (minor)": "čeka Cilium 1.21.x + Longhorn s podrškom za 1.37 (tasks/81)",
+}
 UA = {"User-Agent": "homelab-image-audit/1.0", "Accept": "application/json"}
 
 def http_json(url, headers=None, timeout=25):
@@ -77,7 +87,7 @@ def running_images():
         out = subprocess.run("kubectl get pods -A -o json", shell=True, capture_output=True, text=True).stdout
         pods = json.loads(out)
         images = [c["image"] for p in pods["items"] for c in p["spec"].get("containers", [])]
-    return sorted({i for i in images if not i.startswith(SKIP_PREFIXES)})
+    return sorted({i for i in images if not i.startswith(SKIP_PREFIXES) or i.startswith(INCLUDE_PREFIXES)})
 
 def split(image):
     ref = image.split("@")[0]
@@ -149,6 +159,14 @@ def audit():
             latest, source = "? (no source mapping)", "-"
         elif src[0] == "manual":
             latest, source = "(manual)", src[1]
+        elif src[0] == "gh-line":
+            line = re.match(r"v?(\d+)\.(\d+)\.", tag)
+            pattern = rf"^v?{line.group(1)}\.{line.group(2)}\.\d+$" if line else None
+            latest, source = latest_gh(src[1], pattern), "gh:" + src[1]
+            ga = latest_gh(src[1], r"^v?\d+\.\d+\.\d+$")
+            new_minor = bool(line) and not ga.startswith(("?", "(")) and vkey(ga)[:2] > [int(line.group(1)), int(line.group(2))]
+            minor_row = {"repo": repo + " (minor)", "running": f"v{line.group(1)}.{line.group(2)}.x" if line else tag,
+                         "latest": ga, "source": source, "newer": new_minor}
         elif src[0] == "gh":
             latest, source = latest_gh(src[1], src[2] if len(src) > 2 else None), "gh:" + src[1]
         else:
@@ -156,6 +174,11 @@ def audit():
         unknown = latest.startswith(("?", "("))
         newer = not unknown and norm(latest) != norm(tag) and not norm(tag).startswith(norm(latest))
         rows.append({"repo": repo, "running": tag, "latest": latest, "source": source, "newer": newer})
+        if src and src[0] == "gh-line":
+            rows.append(minor_row)
+    for r in rows:
+        if r["repo"] in NOTES:
+            r["source"] += " — " + NOTES[r["repo"]]
     return rows
 
 def print_table(rows):
