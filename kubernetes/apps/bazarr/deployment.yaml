@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: bazarr
-          image: ghcr.io/linuxserver/bazarr:v1.6.2-ls366
+          image: ghcr.io/linuxserver/bazarr:v1.6.2-ls368
           readinessProbe:
             tcpSocket:
               port: 6767
