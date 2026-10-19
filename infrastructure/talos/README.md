@@ -8,7 +8,7 @@ age-encrypted outside git — see [Machine secrets backup](#machine-secrets-back
 
 | | |
 |---|---|
-| Talos | v1.14.2 (one Proxmox VM per HP EliteDesk G4 host) |
+| Talos | v1.14.3 (one Proxmox VM per HP EliteDesk G4 host) |
 | Nodes | talos-icw-nam (192.168.1.143), talos-pv0-ntu (192.168.1.135), talos-node-hades (192.168.1.136) |
 | API VIP | 192.168.1.100 (see `vip-patch.yaml`, interface ens18) |
 | Longhorn disk | second disk `/dev/sdb`, mounted at `/var/mnt/longhorn` (see `patch-all.yaml`) |
@@ -18,10 +18,10 @@ age-encrypted outside git — see [Machine secrets backup](#machine-secrets-back
 ## System extensions and factory image
 
 All three nodes run the same factory schematic (verified 2026-09-24 via
-`talosctl get extensions`; upgraded to v1.14.2 on 2026-10-02):
+`talosctl get extensions`; upgraded to v1.14.3 on 2026-10-19):
 
 ```
-factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.14.2
+factory.talos.dev/installer/e37cea50363b49e1887745d13c0a9fcb282499ee982535f2369db3fa1ce770c1:v1.14.3
 ```
 
 Extensions included in the schematic:
@@ -93,8 +93,21 @@ if the extension set itself changes.
 talosctl upgrade --nodes <node-ip> --image <factory-image>:<new-version>
 ```
 
-One node at a time (last done 2026-10-02: 1.14.1 -> 1.14.2, order .143,
-.135, .136), after a manual etcd snapshot (`etcd-snapshot.sh`, see below).
+One node at a time (last done 2026-10-19: 1.14.2 -> 1.14.3, order .143,
+.136, .135), after a manual etcd snapshot (`etcd-snapshot.sh`, see below).
+Upgrade the `talosctl` client to the target version first. Do the etcd
+leader last, and move leadership off it right before
+(`talosctl -n <leader-ip> etcd forfeit-leadership`).
+Since 1.14 the client cordons and drains the node itself (5 min
+timeout), and `--preserve`/`--stage` are ignored. Each node took ~5 min,
+plus 3-4 min for Longhorn to resync the replicas. Wait until all volumes
+are `healthy` again before the next node.
+During the drains etcd "in use" climbs to ~100 % of the DB file
+(55 -> 97 MB). The apiserver's 5-min compaction brings it back to ~25 MB,
+so this is not a problem.
+1.14.4 was skipped: its only change is kernel 6.18.57, and that kernel
+has an open regression on Proxmox q35/OVMF guests (siderolabs/talos#14657,
+ACPI power button lost).
 Afterwards sync
 `machine.install.image` on every node:
 
