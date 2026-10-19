@@ -8,7 +8,7 @@ If VIKUNJA_URL + VIKUNJA_TOKEN + VIKUNJA_TASK are set, posts a comment on that t
 set of upgrade candidates changed since the last run (state kept in ConfigMap image-audit-state in-cluster),
 so a daily schedule does not spam the task. Nothing is ever changed in the cluster or in git besides that state.
 """
-import html, json, os, re, ssl, subprocess, sys, urllib.error, urllib.request
+import html, json, os, re, ssl, subprocess, sys, urllib.error, urllib.parse, urllib.request
 
 SKIP_PREFIXES = ("registry.k8s.io/", "quay.io/cilium/", "ghcr.io/fluxcd/", "ghcr.io/siderolabs/",
                  "docker.io/longhornio/csi-", "docker.io/longhornio/livenessprobe",
@@ -16,7 +16,8 @@ SKIP_PREFIXES = ("registry.k8s.io/", "quay.io/cilium/", "ghcr.io/fluxcd/", "ghcr
                  "docker.io/longhornio/longhorn-engine", "docker.io/longhornio/longhorn-ui",
                  "quay.io/jetstack/cert-manager-webhook", "quay.io/jetstack/cert-manager-cainjector",
                  "ghcr.io/immich-app/immich-machine-learning")
-# image repo -> ("gh", "owner/repo"[, tag_regex]) GitHub releases, ("hub", "ns/repo", tag_regex) Docker Hub tags,
+# image repo -> ("gh", "owner/repo"[, tag_regex]) GitHub releases, ("hub", "ns/repo", tag_regex[, name_filter]) Docker Hub
+# tags (name_filter narrows the query for repos whose 100 most recent tags may not include the wanted line),
 # ("git", "owner/repo", "branch") own build tagged with an upstream commit sha — reports how far the branch
 # moved on, ("manual", "note"). Other own images (ghcr.io/zarnautovic/*) are git-sha tagged and deployed by hand.
 SOURCES = {
@@ -45,11 +46,11 @@ SOURCES = {
     "plexinc/pms-docker": ("hub", "plexinc/pms-docker", r"^\d+\.\d+\.\d+\.\d+-[0-9a-f]+$"),
     "pgvector/pgvector": ("hub", "pgvector/pgvector", r"^\d+\.\d+\.\d+-pg18$"),
     "postgres": ("hub", "library/postgres", r"^18\.\d+-alpine$"),
-    "docker.io/library/postgres": ("hub", "library/postgres", r"^17\.\d+-bookworm$"),
+    "docker.io/library/postgres": ("hub", "library/postgres", r"^17\.\d+-trixie$"),
     "ghcr.io/immich-app/postgres": ("manual", "follow Immich release notes (vectorchord tag is dictated by Immich)"),
     "docker.io/valkey/valkey": ("hub", "valkey/valkey", r"^9\.1\.\d+-alpine$"),
     "couchdb": ("hub", "library/couchdb", r"^\d+\.\d+\.\d+(\.\d+)?$"),
-    "python": ("hub", "library/python", r"^3\.13\.\d+-slim$"),
+    "python": ("hub", "library/python", r"^3\.13\.\d+-slim$", "3.13."),
     "nousresearch/hermes-agent": ("hub", "nousresearch/hermes-agent", r"^v?\d+\.\d+\.\d+$"),
 }
 UA = {"User-Agent": "homelab-image-audit/1.0", "Accept": "application/json"}
@@ -110,9 +111,12 @@ def latest_gh(repo, pattern=None):
     t = gh_api(f"repos/{repo}/tags?per_page=1")
     return t[0]["name"] if isinstance(t, list) and t else "?"
 
-def latest_hub(repo, pattern):
+def latest_hub(repo, pattern, name=""):
+    url = f"https://hub.docker.com/v2/repositories/{repo}/tags?page_size=100&ordering=last_updated"
+    if name:
+        url += "&name=" + urllib.parse.quote(name)
     try:
-        data = http_json(f"https://hub.docker.com/v2/repositories/{repo}/tags?page_size=100&ordering=last_updated")
+        data = http_json(url)
     except Exception as e:  # noqa
         return f"? ({e.__class__.__name__})"
     rx = re.compile(pattern)
@@ -148,7 +152,7 @@ def audit():
         elif src[0] == "gh":
             latest, source = latest_gh(src[1], src[2] if len(src) > 2 else None), "gh:" + src[1]
         else:
-            latest, source = latest_hub(src[1], src[2]), "hub:" + src[1]
+            latest, source = latest_hub(*src[1:]), "hub:" + src[1]
         unknown = latest.startswith(("?", "("))
         newer = not unknown and norm(latest) != norm(tag) and not norm(tag).startswith(norm(latest))
         rows.append({"repo": repo, "running": tag, "latest": latest, "source": source, "newer": newer})
