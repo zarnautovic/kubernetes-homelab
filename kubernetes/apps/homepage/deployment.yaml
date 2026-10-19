@@ -23,7 +23,7 @@ spec:
       # ConfigMap changes. Same image only because it has sh + cp.
       initContainers:
         - name: copy-config
-          image: ghcr.io/gethomepage/homepage:v2.4.0
+          image: ghcr.io/gethomepage/homepage:v2.6.0
           command: ["sh", "-c", "cp -L /config-src/* /app/config/"]
           volumeMounts:
             - name: config-src
@@ -33,7 +33,7 @@ spec:
               mountPath: /app/config
       containers:
         - name: homepage
-          image: ghcr.io/gethomepage/homepage:v2.4.0
+          image: ghcr.io/gethomepage/homepage:v2.6.0
           readinessProbe:
             tcpSocket:
               port: 3000
