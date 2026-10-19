@@ -53,7 +53,7 @@ spec:
         # watches — synced to CouchDB instantly, unlike external NFS
         # clients whose writes wait for a pod restart.
         - name: vault-webhook
-          image: python:3.13-slim
+          image: python:3.13.16-slim
           command: ["python", "/opt/webhook/webhook.py"]
           securityContext:
             runAsUser: 1993
