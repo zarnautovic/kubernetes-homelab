@@ -15,7 +15,7 @@ spec:
       priorityClassName: system-node-critical
       containers:
         - name: intel-gpu-plugin
-          image: intel/intel-gpu-plugin:0.37.0
+          image: intel/intel-gpu-plugin:0.37.1
           imagePullPolicy: IfNotPresent
           # Let two pods share one iGPU per node (Plex + Immich both on talos-pv0-ntu).
           args:
