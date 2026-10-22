@@ -23,7 +23,8 @@ INCLUDE_PREFIXES = ("quay.io/cilium/cilium:", "registry.k8s.io/kube-apiserver:")
 # ("gh-line", "owner/repo") latest patch within the running minor line, plus a separate "(minor)" row that only
 # turns into a candidate once a newer minor is GA (CNI / Kubernetes: patches are routine, minors are a project),
 # ("git", "owner/repo", "branch") own build tagged with an upstream commit sha — reports how far the branch
-# moved on, ("manual", "note"). Other own images (ghcr.io/zarnautovic/*) are git-sha tagged and deployed by hand.
+# moved on, ("manual", "note"). Other own images (ghcr.io/zarnautovic/*) are git-sha tagged and deployed by hand,
+# except tdeemon: semver releases that Flux image automation deploys (kubernetes/apps/tdeemon/image-automation.yaml).
 SOURCES = {
     "quay.io/cilium/cilium": ("gh-line", "cilium/cilium"),
     "registry.k8s.io/kube-apiserver": ("gh-line", "kubernetes/kubernetes"),
