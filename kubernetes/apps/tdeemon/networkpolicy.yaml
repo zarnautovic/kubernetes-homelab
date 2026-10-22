@@ -1,0 +1,26 @@
+# TDEEMON_TRUSTED_PROXIES is the whole pod CIDR, so only Cilium's Envoy
+# (Gateway "main"), the kubelet's probes and Homepage's site monitor may
+# reach tdeemon: another pod could otherwise send a forged
+# X-Forwarded-For past the limits on failed sign-ins. Clients in the
+# cluster (Hermes over MCP, HAE's relay) go through the route, as
+# https://tdeemon.zlayahome.ovh.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tdeemon
+  namespace: tdeemon
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: tdeemon
+  ingress:
+    - fromEntities:
+        - ingress
+        - host
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: homepage
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP

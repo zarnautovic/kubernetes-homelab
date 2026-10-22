@@ -8,3 +8,4 @@ resources:
   - service.yaml
   - httproute.yaml
   - image-automation.yaml
+  - networkpolicy.yaml

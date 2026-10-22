@@ -56,6 +56,15 @@ spec:
             # on failed sign-ins count.
             - name: TDEEMON_TRUSTED_PROXIES
               value: 10.244.0.0/16
+            # Authentik OIDC (application "tdeemon", provider pk 22); the
+            # client secret is in the SOPS secret. Its email mapping says
+            # verified: only the admin sets addresses in Authentik.
+            - name: TDEEMON_OIDC_ISSUER
+              value: https://authentik.zlayahome.ovh/application/o/tdeemon/
+            - name: TDEEMON_OIDC_CLIENT_ID
+              value: iFdqgJFnUvbkJs3wXSyJpcACHN9nMuz7DqiHDqu6
+            - name: TDEEMON_OIDC_NAME
+              value: Authentik
           ports:
             - name: http
               containerPort: 8080
