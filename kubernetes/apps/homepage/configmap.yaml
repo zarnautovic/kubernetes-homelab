@@ -153,6 +153,11 @@ data:
               url: http://bazarr.bazarr.svc.cluster.local:6767
               key: "{{HOMEPAGE_VAR_BAZARR_KEY}}"
     - Health:
+        - tdeemon:
+            icon: mdi-food-apple
+            href: "https://tdeemon.zlayahome.ovh"
+            description: prehrana i adaptivni TDEE
+            siteMonitor: http://tdeemon.tdeemon.svc.cluster.local:8080/healthz
         - Health Dashboard:
             icon: mdi-heart-pulse
             href: "https://health.zlayahome.ovh"

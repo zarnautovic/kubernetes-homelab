@@ -1,0 +1,57 @@
+# Each tdeemon release publishes ghcr.io/zarnautovic/tdeemon:X.Y.Z; the
+# policy picks the highest, and the automation commits it into
+# deployment.yaml (the $imagepolicy marker) on main, with the read-write
+# deploy key of flux-system/flux-system.
+#
+# These kinds need Flux's image controllers: an upgrade or a bootstrap of
+# Flux must keep them, or prune removes the CRDs and these with them:
+#   flux install --components-extra=image-reflector-controller,image-automation-controller \
+#     --export > kubernetes/flux/flux-system/gotk-components.yaml
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageRepository
+metadata:
+  name: tdeemon
+  namespace: flux-system
+spec:
+  image: ghcr.io/zarnautovic/tdeemon
+  interval: 10m
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImagePolicy
+metadata:
+  name: tdeemon
+  namespace: flux-system
+spec:
+  imageRepositoryRef:
+    name: tdeemon
+  # X.Y.Z only: the X.Y and sha-<commit> tags of the same image are skipped.
+  filterTags:
+    pattern: '^\d+\.\d+\.\d+$'
+  policy:
+    semver:
+      range: ">=0.0.0"
+---
+apiVersion: image.toolkit.fluxcd.io/v1
+kind: ImageUpdateAutomation
+metadata:
+  name: tdeemon
+  namespace: flux-system
+spec:
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  git:
+    checkout:
+      ref:
+        branch: main
+    commit:
+      author:
+        name: fluxcdbot
+        email: fluxcdbot@users.noreply.github.com
+      messageTemplate: "tdeemon: {{ range .Changed.Changes }}{{ .OldValue }} -> {{ .NewValue }}{{ end }}"
+    push:
+      branch: main
+  update:
+    path: ./kubernetes/apps/tdeemon
+    strategy: Setters

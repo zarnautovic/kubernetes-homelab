@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tdeemon
+  namespace: tdeemon
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: 1
+  strategy:
+    # SQLite on RWO storage, and the new pod migrates the schema at start:
+    # the old pod must be gone first, or it keeps writing to a schema it
+    # does not know.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tdeemon
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tdeemon
+    spec:
+      # More than the server's 15 s shutdown timeout.
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        # Without it the kubelet's recursive chmod on every mount turns
+        # tdeemon.db's 0600 into 0660.
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: tdeemon
+          # Source: https://github.com/zarnautovic/tdeemon
+          image: ghcr.io/zarnautovic/tdeemon:0.28.0 # {"$imagepolicy": "flux-system:tdeemon"}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - secretRef:
+                name: tdeemon-env
+          env:
+            - name: TZ
+              value: Europe/Zagreb
+            - name: TDEEMON_BASE_URL
+              value: https://tdeemon.zlayahome.ovh
+            - name: TDEEMON_DATA_DIR
+              value: /data
+            # Cilium's Envoy (Gateway "main") reaches the pod from the pod
+            # CIDR; its X-Forwarded-For names the client, which the limits
+            # on failed sign-ins count.
+            - name: TDEEMON_TRUSTED_PROXIES
+              value: 10.244.0.0/16
+          ports:
+            - name: http
+              containerPort: 8080
+          # Migrations, and the backup before them, run before the server
+          # listens: liveness waits until it has started.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 120
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: tdeemon-data
