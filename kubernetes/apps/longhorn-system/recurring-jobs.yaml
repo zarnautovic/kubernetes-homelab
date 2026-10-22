@@ -15,7 +15,7 @@
 # get recurring-job-group.longhorn.io/no-backup=enabled instead, a group no job uses.
 #
 # Current assignment (2026-10-02, balanced by backup size):
-#   nightly-a: plex-config, health-api-data, autobrr-config, bookorbit-data, bookorbit-postgres
+#   nightly-a: plex-config, health-api-data, autobrr-config, bookorbit-data, bookorbit-postgres, tdeemon-data (22.10.)
 #   nightly-b: prowlarr-config, hermes-data, sonarr-config, immich-postgres
 #   nightly-c: tautulli, qbittorrent, seerr, authentik-postgresql, bazarr, couchdb, radarr
 #   no-backup: immich-machine-learning (cache)

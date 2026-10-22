@@ -1,7 +1,6 @@
 # SQLite on Longhorn RWO, never NFS. Backups: tdeemon's own daily snapshots
-# in /data/backups, and Longhorn's "default" group (backup-*-c jobs) takes
-# the volume off the node; label the Volume CR into a nightly group once it
-# exists (longhorn-system/recurring-jobs.yaml).
+# in /data/backups, and Longhorn's group nightly-a (labelled on the Volume
+# CR, longhorn-system/recurring-jobs.yaml) takes the volume off the node.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
