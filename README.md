@@ -9,7 +9,7 @@ GitOps repository for my homelab Kubernetes cluster.
 | OS | Talos Linux v1.14.3 |
 | Kubernetes | v1.36.5 |
 | CNI | Cilium v1.20.3 (kube-proxy replacement, native routing, Gateway API, L2 announcements) |
-| GitOps | Flux CD v2.9 |
+| GitOps | Flux CD v2.9 (+ image automation for tdeemon) |
 | Secrets | SOPS + age |
 | Storage | Longhorn v1.12.1 + TrueNAS NFS |
 
@@ -73,6 +73,7 @@ kubernetes/
     ├── obsidian-livesync/ # CouchDB backend for Obsidian LiveSync + livesync-bridge file mirror
     ├── hermes/         # Hermes Agent (Telegram gateway, ChatGPT OAuth)
     ├── health-api/     # Apple Health import + vault index + stats API/dashboard (Go)
+    ├── tdeemon/        # Nutrition tracker with an adaptive TDEE (Go, SQLite); Flux image automation deploys each release
     ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
     ├── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
     ├── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tdeemon
+  namespace: tdeemon
+spec:
+  selector:
+    app.kubernetes.io/name: tdeemon
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

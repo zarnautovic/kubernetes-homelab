@@ -1,0 +1,23 @@
+# Privatno (LAN + Tailscale) preko Gatewaya "main"; tdeemon ima vlastiti
+# login (lozinka i Authentik OIDC), pa ne ide kroz Authentik proxy. HAE šalje
+# na /api/v1/ingest s Bearer tokenom; /mcp je time isto samo LAN/Tailscale.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tdeemon
+  namespace: tdeemon
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+      sectionName: https-ovh
+  hostnames:
+    - "tdeemon.zlayahome.ovh"
+  rules:
+    - backendRefs:
+        - name: tdeemon
+          port: 8080
+      # HAE's exports and MCP streamable-HTTP sessions outlive Envoy's 15 s default.
+      timeouts:
+        request: 10m
+        backendRequest: 10m
