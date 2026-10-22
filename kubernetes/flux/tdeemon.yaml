@@ -5,6 +5,9 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
+  # A dependency that is reconciling the same revision (longhorn) makes it
+  # wait; try again after a minute, not the whole interval.
+  retryInterval: 1m
   path: ./kubernetes/apps/tdeemon
   prune: true
   sourceRef:

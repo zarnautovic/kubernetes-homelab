@@ -14,7 +14,9 @@ metadata:
   namespace: flux-system
 spec:
   image: ghcr.io/zarnautovic/tdeemon
-  interval: 10m
+  # A release's image is pushed about 3 min after the merge; a scan every
+  # 2 min deploys it within a few more.
+  interval: 2m
 ---
 apiVersion: image.toolkit.fluxcd.io/v1
 kind: ImagePolicy
@@ -37,7 +39,7 @@ metadata:
   name: tdeemon
   namespace: flux-system
 spec:
-  interval: 10m
+  interval: 2m
   sourceRef:
     kind: GitRepository
     name: flux-system
