@@ -28,7 +28,7 @@ spec:
       containers:
         - name: health-api
           # Source: https://github.com/zarnautovic/health-api
-          image: ghcr.io/zarnautovic/health-api:9b5bb47
+          image: ghcr.io/zarnautovic/health-api:f4ad777
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -40,16 +40,14 @@ spec:
           env:
             - name: TZ
               value: Europe/Zagreb
-            # Writes go through the vault-webhook sidecar so the bridge's
-            # inotify watcher picks them up; reads use the NFS mirror.
-            - name: WEBHOOK_URL
-              value: http://vault-webhook.obsidian-livesync.svc.cluster.local:8080
+            # Training only since nutrition moved to tdeemon: the vault
+            # mirror is read for Program.md and Vjezbe.md, never written.
             - name: VAULT_DIR
               value: /vault
             - name: DB_PATH
               value: /data/health.db
-            # A rescan is cheap (a handful of notes, tens of ms), so keep the
-            # lag between an Obsidian edit and the dashboard short.
+            # A rescan is cheap (two notes, a few ms), so keep the lag
+            # between an edit of the program and the dashboard short.
             - name: RESCAN_INTERVAL
               value: 5m
           ports:

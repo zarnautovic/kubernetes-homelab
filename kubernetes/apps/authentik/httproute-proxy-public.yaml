@@ -13,7 +13,7 @@ spec:
       namespace: network
   hostnames:
     - "seerr.zlayahome.ovh"
-    # health: dashboard iza Authentika, ingest putanje (/health-metrics, /healthz, /strong-import)
+    # health: dashboard iza Authentika, Strong upload (/strong-import) i /healthz
     # prolaze bez logina preko skip_path_regex u proxy provideru (Bearer token u API-ju)
     - "health.zlayahome.ovh"
   rules:

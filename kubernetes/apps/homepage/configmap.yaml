@@ -158,33 +158,37 @@ data:
             href: "https://tdeemon.zlayahome.ovh"
             description: prehrana i adaptivni TDEE
             siteMonitor: http://tdeemon.tdeemon.svc.cluster.local:8080/healthz
-        - Health Dashboard:
-            icon: mdi-heart-pulse
+        - Trening:
+            icon: mdi-weight-lifter
             href: "https://health.zlayahome.ovh"
-            description: kilaža, unos, san, trening
+            description: snaga, program, treninzi
             widget:
               type: customapi
-              url: http://health-api.health-api.svc.cluster.local:8080/stats?window=28d
+              url: http://health-api.health-api.svc.cluster.local:8080/stats/strength?window=28d
               refreshInterval: 300000
               mappings:
                 - field:
-                    current: kilaza_last
-                  label: Kilaža
+                    veliki_tri:
+                      0: e1rm_last
+                  label: Čučanj e1RM
                   format: float
                   suffix: " kg"
                 - field:
-                    kilaza_trend: kg_per_week
-                  label: kg/tjedan
+                    veliki_tri:
+                      1: e1rm_last
+                  label: Bench e1RM
                   format: float
-                - field:
-                    tdee: measured
-                  label: TDEE
-                  format: number
-                - field:
-                    targets: kilaza_milestone
-                  label: Cilj
-                  format: number
                   suffix: " kg"
+                - field:
+                    veliki_tri:
+                      2: e1rm_last
+                  label: Mrtvo e1RM
+                  format: float
+                  suffix: " kg"
+                - field:
+                    sessions: per_week
+                  label: Treninga/tj.
+                  format: float
     - AI:
         - Hermes:
             icon: mdi-robot
