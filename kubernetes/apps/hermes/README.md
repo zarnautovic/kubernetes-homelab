@@ -7,9 +7,10 @@ and **OpenAI Codex (ChatGPT-subscription OAuth)** as the model provider
 — no API key, authenticated via device-code flow.
 
 All state (config, OAuth credentials, memories, skills, sessions) lives
-on the `hermes-data` Longhorn PVC at `/opt/data`. The Obsidian vault
-mirror is mounted read-only at `/vault` (uid 10000 can read the
-1993-owned dataset via world-read).
+on the `hermes-data` Longhorn PVC at `/opt/data`. Hermes has no access to
+the Obsidian vault: nutrition, weight and the plan are tdeemon's, over MCP
+(`mcp_servers.tdeemon` in its config, the key in its `.env`), and health-api
+keeps the training side.
 
 ## First-time setup
 

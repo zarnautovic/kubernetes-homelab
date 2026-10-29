@@ -65,16 +65,10 @@ spec:
               value: SCLmsXzawFwx5Aa6CJh3tso1lLiNbELKkZzmuWSZ
             - name: HERMES_DASHBOARD_PUBLIC_URL
               value: https://hermes.zlayahome.ovh
-            # Read-only NFS mount of the Obsidian vault mirror; the bundled
-            # obsidian skill resolves the vault through this variable.
-            - name: OBSIDIAN_VAULT_PATH
-              value: /vault
-            # Writes go through the vault-webhook sidecar in the bridge pod
-            # (reads stay on /vault) — see the vault-webhook skill.
-            - name: VAULT_WEBHOOK_URL
-              value: http://vault-webhook.obsidian-livesync.svc.cluster.local:8080
-            # Pre-computed health aggregates (weekly averages, TDEE) so
-            # analyses don't re-read every daily note; token in hermes-env.
+            # Nutrition, weight and the plan are tdeemon's, over MCP (in
+            # Hermes's config on its volume); Hermes has no access to the
+            # vault. health-api keeps the training side: the program and
+            # strength stats; token in hermes-env.
             - name: HEALTH_API_URL
               value: http://health-api.health-api.svc.cluster.local:8080
           ports:
@@ -85,18 +79,12 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /opt/data
-            - name: vault
-              mountPath: /vault
-              readOnly: true
             - name: shm
               mountPath: /dev/shm
       volumes:
         - name: data
           persistentVolumeClaim:
             claimName: hermes-data
-        - name: vault
-          persistentVolumeClaim:
-            claimName: vault-ro
         - name: shm
           emptyDir:
             medium: Memory
