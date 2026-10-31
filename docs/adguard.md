@@ -61,6 +61,8 @@ Posljedice:
   | k8s.home (API VIP) | 192.168.1.100 |
   | adguard.home | 192.168.1.244 |
   | photos.zlayahome.ovh (faza 2, 31.10.) | 192.168.1.240 (Gateway `main`) |
+  | pve.zlayahome.ovh (31.10., tasks/49) | 192.168.1.10 (Proxmox UI :8006, LE cert na zeusu) |
+  | nas.zlayahome.ovh (31.10., tasks/49) | 192.168.1.101 (TrueNAS UI, LE cert na NAS-u) |
   (ha.home nije potreban: `homeassistant.home` dolazi iz DHCP-a; po želji rewrite `ha.home → .179`.)
 - Filteri: AdGuard DNS filter (default) + OISD Big (`https://big.oisd.nl`). Ne gomilati liste; HaGeZi Pro tek ako OISD propušta.
 - Rate limit: 0 (isključen) ili whitelist čvorova .135/.136/.143 — CoreDNS iz klastera dolazi s IP-a čvora i lako pređe default 20 req/s.
@@ -123,3 +125,11 @@ Cilj: Immich upload iz LAN-a i s Tailscalea mimo Cloudflare tunela (limit 100 MB
 - **Zasebna HTTPRoute `immich/immich-lan`** na `main/https-ovh` (commit aeeaded), s anotacijom `external-dns.kubernetes.io/controller: none`. external-dns je preskače, pa javni zapis ostaje CNAME na tunel. Na postojeću rutu `immich` NE dodavati `main` parentRef: external-dns bi za isto ime imao dva cilja.
 - Izvan kuće bez Tailscalea `photos` i dalje ide kroz Cloudflare (limit vrijedi).
 - Android Private DNS / iCloud Private Relay zaobilaze Tailscale DNS. Ako `photos` s puta ide na Cloudflare, prvo to provjeriti.
+
+## Valjani certifikati za Proxmox i TrueNAS (31.10.2026, tasks/49)
+- `pve.zlayahome.ovh` → .10 (zeus) i `nas.zlayahome.ovh` → .101: ručni Cloudflare A zapisi (DNS only, komentar „manual … tasks/49”; external-dns ih ne dira) **i** AdGuard rewriteovi, pa imena rade i kad nema interneta.
+- Certifikate izdaju i obnavljaju sami uređaji (ACME, Let's Encrypt, Cloudflare DNS-01) s posebnim tokenom `acme-pve-nas` (Zone:DNS:Edit + Zone:Read, samo `zlayahome.ovh`, bez isteka). Original je na managmentu u `~/.config/cloudflare/acme-token`.
+  - Proxmox: ACME račun `default` (zlaya.31@gmail.com), plugin `cloudflare`, node zeus `acmedomain0`. Obnavlja ga `pve-daily-update.timer`.
+  - TrueNAS: DNS authenticator `cloudflare`, certifikat `nas_zlayahome_le` (renew_days 30), postavljen kao UI cert.
+- Proxmox UI ostaje na portu **8006**.
+- ⚠ Kad se TrueNAS UI restarta (obnova certa, update), HA integracija `truenas_scale` (hurricaneb 1.0.4) može upasti u petlju `Concurrent call to receive()` i zagušiti HA (31.10. je trebao reboot HA VM-a). Vidi zadatak za fix.
