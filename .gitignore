@@ -11,3 +11,7 @@ infrastructure/talos/worker.yaml
 *.tfstate.backup
 .terraform/
 .tofu/
+
+# Python bytecode
+__pycache__/
+*.pyc
