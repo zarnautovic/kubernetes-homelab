@@ -7,7 +7,7 @@ GitOps repository for my homelab Kubernetes cluster.
 | Component | Technology |
 |---|---|
 | OS | Talos Linux v1.14.3 |
-| Kubernetes | v1.36.5 |
+| Kubernetes | v1.36.6 |
 | CNI | Cilium v1.20.3 (kube-proxy replacement, native routing, Gateway API, L2 announcements) |
 | GitOps | Flux CD v2.9 (+ image automation for tdeemon: upgrade with `--components-extra=image-reflector-controller,image-automation-controller`) |
 | Secrets | SOPS + age |
