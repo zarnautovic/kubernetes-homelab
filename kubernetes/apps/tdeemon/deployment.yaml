@@ -35,7 +35,7 @@ spec:
       containers:
         - name: tdeemon
           # Source: https://github.com/zarnautovic/tdeemon
-          image: ghcr.io/zarnautovic/tdeemon:0.122.0 # {"$imagepolicy": "flux-system:tdeemon"}
+          image: ghcr.io/zarnautovic/tdeemon:0.123.0 # {"$imagepolicy": "flux-system:tdeemon"}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
