@@ -132,4 +132,4 @@ Cilj: Immich upload iz LAN-a i s Tailscalea mimo Cloudflare tunela (limit 100 MB
   - Proxmox: ACME račun `default` (zlaya.31@gmail.com), plugin `cloudflare`, node zeus `acmedomain0`. Obnavlja ga `pve-daily-update.timer`.
   - TrueNAS: DNS authenticator `cloudflare`, certifikat `nas_zlayahome_le` (renew_days 30), postavljen kao UI cert.
 - Proxmox UI ostaje na portu **8006**.
-- ⚠ Kad se TrueNAS UI restarta (obnova certa, update), HA integracija `truenas_scale` (hurricaneb 1.0.4) može upasti u petlju `Concurrent call to receive()` i zagušiti HA (31.10. je trebao reboot HA VM-a). Vidi zadatak za fix.
+- ⚠ Kad se TrueNAS UI restarta (obnova certa, update), HA integracija `truenas_scale` (hurricaneb 1.0.4) može upasti u petlju `Concurrent call to receive()` i zagušiti HA (31.10. je trebao reboot HA VM-a). Ako HA nakon toga ne odgovara: `qm reboot 101` na zeusu.
