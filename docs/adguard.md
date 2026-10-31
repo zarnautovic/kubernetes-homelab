@@ -60,6 +60,7 @@ Posljedice:
   | nas.home, truenas.home | 192.168.1.101 |
   | k8s.home (API VIP) | 192.168.1.100 |
   | adguard.home | 192.168.1.244 |
+  | photos.zlayahome.ovh (faza 2, 31.10.) | 192.168.1.240 (Gateway `main`) |
   (ha.home nije potreban: `homeassistant.home` dolazi iz DHCP-a; po želji rewrite `ha.home → .179`.)
 - Filteri: AdGuard DNS filter (default) + OISD Big (`https://big.oisd.nl`). Ne gomilati liste; HaGeZi Pro tek ako OISD propušta.
 - Rate limit: 0 (isključen) ili whitelist čvorova .135/.136/.143 — CoreDNS iz klastera dolazi s IP-a čvora i lako pređe default 20 req/s.
@@ -114,5 +115,11 @@ Router DHCP DNS natrag na `192.168.1.1` (ili `192.168.1.1,192.168.1.244` kao dan
 - Lažno pozitivni filteri (OISD je konzervativan, zato samo on na početku).
 - ~~Čvorovi dobivaju .244 preko DHCP-a~~ — dobivaju ga, ali ga ne koriste: statični nameserveri imaju prednost (vidi cold boot gore).
 
-## Faza 2 (poslije, zasebno)
-Tailscale split DNS za `zlayahome.ovh` → AdGuard; rewrite `photos.zlayahome.ovh → 192.168.1.240`; Immich HTTPRoute dodati `main/https-ovh` parentRef. Tada Tailscale DNS i `.home` imena rade i s puta.
+## Faza 2 — GOTOVO 31.10.2026 (tasks/2)
+Cilj: Immich upload iz LAN-a i s Tailscalea mimo Cloudflare tunela (limit 100 MB po zahtjevu).
+
+- **Tailscale split DNS `zlayahome.ovh → 192.168.1.244`** (admin konzola, Zlatan), uz postojeći `home`. Tailnet uređaji sva `*.zlayahome.ovh` imena pitaju AdGuard. AdGuard ih prosljeđuje upstreamu, pa javni zapisi rade kao i prije (rute na `main` → A .240; rute na `public` → CNAME na tunel).
+- **AdGuard rewrite `photos.zlayahome.ovh → 192.168.1.240`**. Dodan preko API-ja i u `adguard-setup.sh` (managment).
+- **Zasebna HTTPRoute `immich/immich-lan`** na `main/https-ovh` (commit aeeaded), s anotacijom `external-dns.kubernetes.io/controller: none`. external-dns je preskače, pa javni zapis ostaje CNAME na tunel. Na postojeću rutu `immich` NE dodavati `main` parentRef: external-dns bi za isto ime imao dva cilja.
+- Izvan kuće bez Tailscalea `photos` i dalje ide kroz Cloudflare (limit vrijedi).
+- Android Private DNS / iCloud Private Relay zaobilaze Tailscale DNS. Ako `photos` s puta ide na Cloudflare, prvo to provjeriti.
