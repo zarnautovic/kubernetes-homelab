@@ -33,7 +33,7 @@ spec:
           # wrong commit). Idle/daily session_reset was removed upstream on
           # purpose (#105021); the hermes-session-reset-policy plugin on the
           # data PVC provides it — re-check it on v0.23 (session internals change).
-          image: nousresearch/hermes-agent:v0.22.2@sha256:36099926da316742423544e055d4734777105ffe6341873af5459b957d0c2919
+          image: nousresearch/hermes-agent:v0.22.5@sha256:9c5561579f3ffdf333401797094ac3a743738d6c25d40f4331c7bf77b694238d
           args: ["gateway", "run"]
           # No TCP probes: the OpenAI-compatible API (8642) only listens
           # when explicitly enabled, and the image supervises the gateway
