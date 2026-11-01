@@ -62,8 +62,14 @@ SOURCES = {
     "nousresearch/hermes-agent": ("hub", "nousresearch/hermes-agent", r"^v?\d+\.\d+\.\d+$"),
 }
 # Known, deliberately deferred candidates: shown with this note in the source column (still listed, not hidden).
+# repo -> note, or repo -> (upstream_version, note): a versioned note only applies while upstream is still at
+# exactly that version, so a known-skipped release stops being annotated once a newer one shows up.
 NOTES = {
     "registry.k8s.io/kube-apiserver (minor)": "čeka Cilium 1.21.x + Longhorn s podrškom za 1.37 (tasks/81)",
+    "quay.io/cilium/cilium": ("v1.20.4", "preskačemo: regresija #49603 (xDS mode drift), čeka 1.20.5"),
+    "docker.io/longhornio/longhorn-manager": ("v1.13.0", "preskačemo: P0 backup bugovi #14185/#14168; 1.12.2 auto (tasks/75), 1.13.1 ručno (tasks/76)"),
+    "ghcr.io/linuxserver/qbittorrent": ("5.3.0_v2.1.2-ls485", "čeka 5.3.1 (regresije #25130/#25125) + fix 20-webui-whitelist.sh za [WebUI]"),
+    "ghcr.io/zarnautovic/livesync-bridge": "rebuild + PVC za state, posebna sesija (tasks/84)",
 }
 UA = {"User-Agent": "homelab-image-audit/1.0", "Accept": "application/json"}
 
@@ -191,8 +197,11 @@ def audit():
         if src and src[0] == "gh-line":
             rows.append(minor_row)
     for r in rows:
-        if r["repo"] in NOTES:
-            r["source"] += " — " + NOTES[r["repo"]]
+        note = NOTES.get(r["repo"])
+        if isinstance(note, tuple):
+            note = note[1] if r["latest"] == note[0] else None
+        if note:
+            r["source"] += " — " + note
     return rows
 
 def print_table(rows):
