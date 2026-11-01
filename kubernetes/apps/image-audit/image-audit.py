@@ -84,11 +84,23 @@ def running_images():
         os.environ["K8S_CA"] = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
         pods = http_json(f"{os.environ['K8S_API']}/api/v1/pods?limit=1000",
                          {"Authorization": "Bearer " + open(sa_token).read()})
-        images = [c["image"] for p in pods["items"] for c in p["spec"].get("containers", [])]
     else:
         out = subprocess.run("kubectl get pods -A -o json", shell=True, capture_output=True, text=True).stdout
         pods = json.loads(out)
-        images = [c["image"] for p in pods["items"] for c in p["spec"].get("containers", [])]
+    images = set()
+    newest_finished = {}   # (namespace, container) -> (creationTimestamp, image)
+    for p in pods["items"]:
+        finished = p.get("status", {}).get("phase") in ("Succeeded", "Failed")
+        for c in p["spec"].get("containers", []):
+            if not finished:
+                images.add(c["image"])
+                continue
+            # Finished pods are kept CronJob/Job history: only the newest run says what the job uses now,
+            # older runs would keep reporting an image that was already bumped.
+            key, ts = (p["metadata"]["namespace"], c["name"]), p["metadata"]["creationTimestamp"]
+            if key not in newest_finished or ts > newest_finished[key][0]:
+                newest_finished[key] = (ts, c["image"])
+    images |= {img for _, img in newest_finished.values()}
     return sorted({i for i in images if not i.startswith(SKIP_PREFIXES) or i.startswith(INCLUDE_PREFIXES)})
 
 def split(image):
