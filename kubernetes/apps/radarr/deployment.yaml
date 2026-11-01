@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: radarr
-          image: ghcr.io/linuxserver/radarr:6.4.4.10685-ls322
+          image: ghcr.io/linuxserver/radarr:6.4.4.10685-ls324
           readinessProbe:
             tcpSocket:
               port: 7878
