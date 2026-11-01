@@ -4,9 +4,10 @@
 Runs the same way locally and in-cluster:
   local:      kubectl + (optional) gh for GitHub; prints the table
   in-cluster: pod list via the Kubernetes API (service account), GitHub/Docker Hub via plain HTTPS
-If VIKUNJA_URL + VIKUNJA_TOKEN + VIKUNJA_TASK are set, posts a comment on that task — but only when the
-set of upgrade candidates changed since the last run (state kept in ConfigMap image-audit-state in-cluster),
-so a daily schedule does not spam the task. Nothing is ever changed in the cluster or in git besides that state.
+If VIKUNJA_URL + VIKUNJA_TOKEN + VIKUNJA_TASK are set, rewrites the auto section of that task's description
+on every run (current candidates + a "last change" line: what is new / resolved since the candidate set last
+changed). No comments are posted; the last change is kept in ConfigMap image-audit-state in-cluster.
+Nothing is ever changed in the cluster or in git besides that state.
 """
 import html, json, os, re, ssl, subprocess, sys, urllib.error, urllib.parse, urllib.request
 
@@ -192,7 +193,8 @@ def print_table(rows):
 STATE_CM = "image-audit-state"
 
 def k8s_state(new=None):
-    """Read (new=None) or write the candidate snapshot kept in a ConfigMap; no-op outside the cluster."""
+    """Read (new=None) or write the state dict kept in a ConfigMap ({"candidates": {...}, "last_change": {...}});
+    returns None outside the cluster."""
     api = os.environ.get("K8S_API")
     if not api:
         return None
@@ -210,8 +212,10 @@ def k8s_state(new=None):
             return e.code, None
     if new is None:
         code, cm = call("GET", f"{base}/{STATE_CM}")
-        return json.loads(cm["data"].get("candidates", "{}")) if code == 200 and cm else {}
-    body = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": STATE_CM}, "data": {"candidates": json.dumps(new, sort_keys=True)}}
+        data = (cm or {}).get("data") or {} if code == 200 else {}
+        return {k: json.loads(v) for k, v in data.items()}
+    body = {"apiVersion": "v1", "kind": "ConfigMap", "metadata": {"name": STATE_CM},
+            "data": {k: json.dumps(v, sort_keys=True, ensure_ascii=False) for k, v in new.items()}}
     code, _ = call("PUT", f"{base}/{STATE_CM}", body)
     if code == 404:
         code, _ = call("POST", base, body)
@@ -220,13 +224,13 @@ def k8s_state(new=None):
 AUTO_START = "<h3>Trenutni kandidati za nadogradnju (auto)</h3>"
 AUTO_END = "<p><em>— kraj automatskog dijela —</em></p>"
 
-def candidates_table(rows, added=None, previous=None):
+def candidates_table(rows, added=None):
     newer = [r for r in rows if r["newer"]]
     if not newer:
         return f"<p>Sve {len(rows)} slike su na zadnjoj upstream verziji.</p>"
     body = ["<table><thead><tr><th>Slika</th><th>Sada</th><th>Upstream</th><th>Izvor</th></tr></thead><tbody>"]
     for r in newer:
-        mark = " 🆕" if added and r["repo"] in added and previous else ""
+        mark = " 🆕" if added and r["repo"] in added else ""
         body.append(f"<tr><td><code>{html.escape(r['repo'])}</code>{mark}</td><td>{html.escape(r['running'])}</td>"
                     f"<td><strong>{html.escape(r['latest'])}</strong></td><td>{html.escape(r['source'])}</td></tr>")
     body.append("</tbody></table>")
@@ -246,15 +250,26 @@ def vikunja(method, path, body=None):
     except urllib.error.HTTPError as e:
         return e.code, None
 
-def update_description(rows, task):
+def change_line(last):
+    """One line describing the last time the candidate set changed."""
+    if not last:
+        return ""
+    parts = []
+    if last.get("added"):
+        parts.append("🆕 " + ", ".join(f"<code>{html.escape(k)}</code> {html.escape(v)}" for k, v in sorted(last["added"].items())))
+    if last.get("resolved"):
+        parts.append("✅ riješeno: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in sorted(last["resolved"])))
+    return f"<p>Zadnja promjena ({html.escape(last.get('date', '?'))}): " + ("; ".join(parts) or "bez razlike") + "</p>"
+
+def update_description(rows, task, last):
     """Rebuild the auto section of the task description on every run (idempotent upsert); the rest is left alone."""
     from datetime import datetime
     code, t = vikunja("GET", f"/tasks/{task}")
     if code != 200 or t is None:
-        print(f"description: cannot read task (HTTP {code})"); return
+        print(f"description: cannot read task (HTTP {code})"); return False
     desc = t.get("description") or ""
-    stamp = f"<p>Zadnja provjera: {datetime.now():%d.%m.%Y %H:%M}. Ova sekcija se automatski prepisuje; povijest promjena je u komentarima.</p>"
-    section = AUTO_START + candidates_table(rows) + stamp + AUTO_END
+    stamp = f"<p>Zadnja provjera: {datetime.now():%d.%m.%Y %H:%M}. Ova sekcija se automatski prepisuje svaki dan (bez komentara).</p>"
+    section = AUTO_START + candidates_table(rows, (last or {}).get("added")) + change_line(last) + stamp + AUTO_END
     if AUTO_START in desc and AUTO_END in desc:
         head, rest = desc.split(AUTO_START, 1)
         _, tail = rest.split(AUTO_END, 1)
@@ -262,43 +277,33 @@ def update_description(rows, task):
     else:
         new_desc = desc + section
     if new_desc == desc:
-        return
+        return True
     code, _ = vikunja("POST", f"/tasks/{task}", {"description": new_desc})
     print(f"description {'updated' if code == 200 else 'NOT updated'} (HTTP {code}){'' if code == 200 else ' — token needs Tasks → Update'}")
+    return code == 200
 
-def post_comment(rows):
+def publish(rows):
     url, token, task = os.environ.get("VIKUNJA_URL"), os.environ.get("VIKUNJA_TOKEN"), os.environ.get("VIKUNJA_TASK")
     if not (url and token and task) or token == "REPLACE_ME":
-        print("Vikunja posting skipped (VIKUNJA_URL/TOKEN/TASK not set)")
+        print("Vikunja update skipped (VIKUNJA_URL/TOKEN/TASK not set)")
         return
     from datetime import date
-    newer = [r for r in rows if r["newer"]]
-    current = {r["repo"]: r["latest"] for r in newer}          # unknown ("?") lookups never count as a change
-    previous = k8s_state()
-    changed = previous is None or previous != current
-    update_description(rows, task)
-    if not changed:
-        print(f"no change since last run ({len(current)} candidates) — no comment")
-        return
-    if os.environ.get("AUDIT_SKIP_COMMENT"):
-        print("comment skipped (AUDIT_SKIP_COMMENT)"); return
-    added = {k: v for k, v in current.items() if previous is not None and previous.get(k) != v}
-    resolved = [k for k in (previous or {}) if k not in current]
-    if newer:
-        comment = (f"<p><strong>Audit slika {date.today():%d.%m.%Y}</strong>: {len(newer)} od {len(rows)} slika ima novije upstream izdanje.</p>"
-                   + candidates_table(rows, added, previous)
-                   + ("<p>Riješeno od prošlog puta: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in resolved) + "</p>" if resolved else ""))
+    current = {r["repo"]: r["latest"] for r in rows if r["newer"]}   # unknown ("?") lookups never count as a change
+    state = k8s_state()                                               # None outside the cluster
+    previous = (state or {}).get("candidates")
+    last = (state or {}).get("last_change")
+    changed = previous is not None and previous != current
+    if changed:
+        last = {"date": f"{date.today():%d.%m.%Y}",
+                "added": {k: v for k, v in current.items() if previous.get(k) != v},
+                "resolved": [k for k in previous if k not in current]}
+        print(f"candidates changed: +{len(last['added'])} / -{len(last['resolved'])}")
     else:
-        comment = f"<p>Audit slika {date.today():%d.%m.%Y}: sve {len(rows)} slike su na zadnjoj upstream verziji."
-        if resolved:
-            comment += " Riješeno: " + ", ".join(f"<code>{html.escape(k)}</code>" for k in resolved) + "."
-        comment += "</p>"
-    code, _ = vikunja("PUT", f"/tasks/{task}/comments", {"comment": comment})
-    print(f"posted comment to task {task} (HTTP {code})")
-    if code in (200, 201):
-        k8s_state(current)
+        print(f"no change since last run ({len(current)} candidates)")
+    if update_description(rows, task, last) and state is not None and (changed or previous is None):
+        k8s_state({"candidates": current, "last_change": last or {}})
 
 if __name__ == "__main__":
     rows = audit()
     print_table(rows)
-    post_comment(rows)
+    publish(rows)
