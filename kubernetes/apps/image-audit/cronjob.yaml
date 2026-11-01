@@ -27,7 +27,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: audit
-              image: python:3.13.16-slim
+              image: python:3.13.18-slim
               command: ["python3", "/opt/audit/image-audit.py"]
               env:
                 - name: VIKUNJA_URL
