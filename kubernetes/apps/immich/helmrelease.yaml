@@ -22,7 +22,7 @@ spec:
         containers:
           main:
             image:
-              tag: v3.3.3
+              tag: v3.3.5
             env:
               TZ: Europe/Zagreb
 
@@ -39,8 +39,8 @@ spec:
           containers:
             main:
               image:
-                # Chart 0.13.2 pins an older 9.1 digest; 9.1.2-alpine has security fixes (2026-09-21).
-                tag: 9.1.2-alpine@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11
+                # Chart 0.13.2 pins an older 9.1 digest; 9.1.3-alpine = security fix GHSA-f4q9-j22m-xqq9 (2026-11-01).
+                tag: 9.1.3-alpine@sha256:bf09d58e96d6b4524a15396b65b242bbe18beebbcc15a04d8ee75ddac62fae0b
 
     server:
       controllers:
