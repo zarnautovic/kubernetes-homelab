@@ -1,4 +1,4 @@
-# Each tdeemon release publishes ghcr.io/zarnautovic/tdeemon:X.Y.Z; the
+# Each tdeemon release publishes ghcr.io/tdeemon/tdeemon:X.Y.Z; the
 # policy picks the highest, and the automation commits it into
 # deployment.yaml (the $imagepolicy marker) on main, with the read-write
 # deploy key of flux-system/flux-system.
@@ -13,7 +13,7 @@ metadata:
   name: tdeemon
   namespace: flux-system
 spec:
-  image: ghcr.io/zarnautovic/tdeemon
+  image: ghcr.io/tdeemon/tdeemon
   # A release's image is pushed about 3 min after the merge; a scan every
   # 2 min deploys it within a few more.
   interval: 2m
