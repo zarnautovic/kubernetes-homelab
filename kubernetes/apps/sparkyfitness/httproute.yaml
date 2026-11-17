@@ -1,0 +1,24 @@
+# Private (LAN + Tailscale) through Gateway "main"; the app has its own login,
+# so it does not go through the Authentik proxy. The frontend's nginx proxies
+# /api, /mcp and /health-data to the server.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sparkyfitness
+  namespace: sparkyfitness
+spec:
+  parentRefs:
+    - name: main
+      namespace: network
+      sectionName: https-ovh
+  hostnames:
+    - "sparky.zlayahome.ovh"
+  rules:
+    - backendRefs:
+        - name: sparkyfitness-frontend
+          port: 80
+      # MCP streamable-HTTP sessions and the phone app's health syncs outlive
+      # Envoy's 15 s default.
+      timeouts:
+        request: 10m
+        backendRequest: 10m

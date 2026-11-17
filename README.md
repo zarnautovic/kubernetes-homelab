@@ -77,6 +77,7 @@ kubernetes/
     ├── immich/         # Photo/video backup (server, ML, Valkey, Postgres+VectorChord)
     ├── bookorbit/      # Ebook library + KOReader/Kobo sync (app + Postgres/pgvector)
     ├── vikunja/        # Task/project tracker for the homelab (app + Postgres), built-in MCP server
+    ├── sparkyfitness/  # Nutrition, training and health tracker on trial beside tdeemon (upstream Helm chart from its git tag + Postgres)
     └── image-audit/    # Daily CronJob: running images vs upstream releases (own builds vs upstream commits), table in the Vikunja audit task
 ```
 
@@ -104,6 +105,7 @@ kubernetes/
 | Immich | immich | photos.example.com | Photo/video backup; official OCI chart (server + ML + Valkey) + own Postgres/VectorChord StatefulSet on Longhorn; library on TrueNAS NFS; LAN endpoint 192.168.1.242:2283 for phone uploads (bypasses Cloudflare's 100 MB body limit) |
 | BookOrbit | bookorbit | books.example.com | Ebook library (Calibre library on TrueNAS NFS `main-pool/books`), web reader, OPDS, KOReader/Kobo sync; own Postgres/pgvector StatefulSet on Longhorn; login via Authentik OIDC |
 | Vikunja | vikunja | tasks.example.com | Task/project tracker for homelab work (Kanban/list/Gantt, CalDAV); own Postgres StatefulSet on Longhorn; private (Gateway `main`, LAN + Tailscale); built-in MCP server at `/api/v2/mcp` used by Claude Code with a scoped API token; login via Authentik OIDC only (local login disabled) |
+| SparkyFitness | sparkyfitness | sparky.example.com | Nutrition, training and health tracker, on trial beside tdeemon; upstream Helm chart read from the repo at a release tag (no published chart), own Postgres StatefulSet on Longhorn; private (Gateway `main`, LAN + Tailscale), so the iPhone app syncs Apple Health over Tailscale; own login |
 | image-audit | image-audit | — | Daily CronJob: running images vs upstream releases (livesync-bridge: commits behind upstream main) → table in the Vikunja audit task; comments only when the candidate set changes |
 
 ### Media Stack

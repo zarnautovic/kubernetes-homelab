@@ -1,0 +1,70 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: sparkyfitness
+  namespace: sparkyfitness
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: ./helm/chart
+      sourceRef:
+        kind: GitRepository
+        name: sparkyfitness
+      reconcileStrategy: Revision
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    cleanupOnFail: true
+    remediation:
+      retries: 3
+  values:
+    global:
+      storageClass: longhorn
+    config:
+      timezone: Europe/Zagreb
+      frontendUrl: https://sparky.zlayahome.ovh
+      # Open until the first account exists, then true.
+      disableSignup: false
+    server:
+      # Keys come from the SOPS secret; the chart's generated ones would rotate
+      # on a render without cluster access and lose the encrypted data.
+      secrets:
+        generate: false
+        existingSecret: sparkyfitness
+      appDatabase:
+        existingSecret: sparkyfitness
+        existingSecretKeys:
+          username: app_db_username
+          password: app_db_password
+      # The chart waits for the database only when it bundles one.
+      initContainers:
+        - name: wait-for-db
+          image: postgres:18.6-alpine
+          command: ["sh", "-c", "until pg_isready -h sparkyfitness-postgres -p 5432; do echo waiting for postgres; sleep 2; done"]
+          securityContext:
+            runAsUser: 70
+            runAsGroup: 70
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      persistence:
+        backup:
+          size: 2Gi
+        uploads:
+          size: 5Gi
+    # Own Postgres StatefulSet (postgres.yaml), as the other apps here.
+    postgresql:
+      enabled: false
+    externalDatabase:
+      host: sparkyfitness-postgres.sparkyfitness.svc.cluster.local
+      port: 5432
+      database: sparkyfitness
+      auth:
+        existingSecret: sparkyfitness
+        existingSecretKeys:
+          username: POSTGRES_USER
+          password: POSTGRES_PASSWORD

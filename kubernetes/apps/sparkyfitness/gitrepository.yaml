@@ -1,0 +1,17 @@
+# The chart is not published to a Helm or OCI repository, so Flux reads it from
+# the upstream repo at a release tag. Bump the tag (chart and images move
+# together, appVersion = tag) after reading the release notes: upstream warns
+# of breaking changes and advises against automatic updates.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: sparkyfitness
+  namespace: sparkyfitness
+spec:
+  interval: 24h
+  url: https://github.com/CodeWithCJ/SparkyFitness
+  ref:
+    tag: v1.12.1
+  ignore: |
+    /*
+    !/helm/chart/
