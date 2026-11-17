@@ -25,8 +25,8 @@ spec:
     config:
       timezone: Europe/Zagreb
       frontendUrl: https://sparky.zlayahome.ovh
-      # Open until the first account exists, then true.
-      disableSignup: false
+      # The one account exists (the first one becomes admin), so no new ones.
+      disableSignup: true
     server:
       # Keys come from the SOPS secret; the chart's generated ones would rotate
       # on a render without cluster access and lose the encrypted data.
